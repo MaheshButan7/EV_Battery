@@ -1,0 +1,21 @@
+﻿# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+frontend/build/
+frontend/coverage/
+
+# Local environment and secrets
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Local editor and operating system files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Agent configuration and working files
+.agents/
