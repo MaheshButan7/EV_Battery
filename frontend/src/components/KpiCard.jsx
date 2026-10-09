@@ -1,43 +1,27 @@
 import React from 'react';
-import {
-  Truck,
-  HeartPulse,
-  AlertTriangle,
-  Zap,
-  RefreshCw,
-  TrendingUp,
-  TrendingDown,
-} from 'lucide-react';
+import { Building2, HeartPulse, AlertTriangle, Zap, Shield, TrendingUp, TrendingDown } from 'lucide-react';
 
 const iconMap = {
-  totalVehicles: Truck,
+  // BESS KPI types
+  totalSites: Building2,
+  installedCapacity: Zap,
   avgFleetSoh: HeartPulse,
+  activeAlarms: AlertTriangle,
+  fleetAvailability: Shield,
+  // legacy fallbacks
+  totalVehicles: Building2,
   activeAlerts: AlertTriangle,
-  vehiclesCharging: Zap,
-  projectedReplacements: RefreshCw,
 };
 
 const colorMap = {
-  totalVehicles: {
-    bg: 'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400',
-    glow: 'border-blue-500/20',
-  },
-  avgFleetSoh: {
-    bg: 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-    glow: 'border-emerald-500/20',
-  },
-  activeAlerts: {
-    bg: 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400',
-    glow: 'border-rose-500/20',
-  },
-  vehiclesCharging: {
-    bg: 'bg-cyan-500/10 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-400',
-    glow: 'border-cyan-500/20',
-  },
-  projectedReplacements: {
-    bg: 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400',
-    glow: 'border-amber-500/20',
-  },
+  totalSites: { bg: 'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400', glow: 'border-blue-500/20' },
+  installedCapacity: { bg: 'bg-cyan-500/10 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-400', glow: 'border-cyan-500/20' },
+  avgFleetSoh: { bg: 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400', glow: 'border-emerald-500/20' },
+  activeAlarms: { bg: 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400', glow: 'border-rose-500/20' },
+  fleetAvailability: { bg: 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400', glow: 'border-indigo-500/20' },
+  // legacy
+  totalVehicles: { bg: 'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400', glow: 'border-blue-500/20' },
+  activeAlerts: { bg: 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400', glow: 'border-rose-500/20' },
 };
 
 export default function KpiCard({ type, label, value, delta, deltaType, suffix = '' }) {
@@ -45,7 +29,7 @@ export default function KpiCard({ type, label, value, delta, deltaType, suffix =
   const style = colorMap[type] || colorMap.totalVehicles;
 
   return (
-    <div className={`relative p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between overflow-hidden group`}>
+    <div className="surface-card relative p-5 rounded-2xl bg-white dark:bg-slate-900 border flex flex-col justify-between overflow-hidden group hover:-translate-y-0.5">
       {/* Top Header Row */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400 tracking-wide uppercase">
