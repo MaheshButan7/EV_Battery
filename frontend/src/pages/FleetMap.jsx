@@ -4,15 +4,14 @@ import PageFrame from '../components/ui/PageFrame';
 import { useDemoData } from '../hooks/useDemoData';
 
 export default function FleetMap() {
-  const { selectedSite } = useDemoData();
-  const sites = selectedSite ? [selectedSite] : [];
+  const { accessibleSites, selectSite } = useDemoData();
 
   return (
     <PageFrame
       title="Site Map"
-      description="Geographic view of BESS sites, communications state, availability and asset health."
+      description="Fleet-wide geographic view of site operating state, communications, availability and asset health."
     >
-      <SiteLocationMap sites={sites} />
+      <SiteLocationMap sites={accessibleSites} onSelectSite={selectSite} />
     </PageFrame>
   );
 }

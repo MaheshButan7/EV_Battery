@@ -7,11 +7,69 @@ import { useAuth } from './useAuth';
 const DemoDataContext = createContext(null);
 
 const initialParts = [
-  { id: 'SP-001', name: 'LFP cell module 280Ah', stock: 12, reserved: 2, minimum: 8, location: 'Jodhpur Store' },
-  { id: 'SP-014', name: 'HVAC filter kit', stock: 6, reserved: 3, minimum: 10, location: 'Raipur Store' },
-  { id: 'SP-022', name: 'Fire panel sensor', stock: 18, reserved: 0, minimum: 5, location: 'Central Store' },
-  { id: 'SP-031', name: 'DC fuse 1250V', stock: 24, reserved: 4, minimum: 12, location: 'Pune Store' },
+  { id: 'SP-001', name: 'LFP cell module 280Ah', stock: 12, reserved: 2, minimum: 8, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
+  { id: 'SP-014', name: 'HVAC filter kit', stock: 6, reserved: 3, minimum: 10, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
+  { id: 'SP-015', name: 'HVAC filter kit', stock: 6, reserved: 3, minimum: 10, location: 'Raipur Store', siteId: 'BESS-RAIPUR' },
+  { id: 'SP-022', name: 'Fire panel sensor', stock: 18, reserved: 0, minimum: 5, location: 'Central Store', siteId: null },
+  { id: 'SP-031', name: 'DC fuse 1250V', stock: 24, reserved: 4, minimum: 12, location: 'Pune Store', siteId: 'BESS-PUNE' },
 ];
+
+const defaultChecklist = (completed = 0) => [
+  { id: 'review', label: 'Review permit and isolation requirements', done: completed > 0 },
+  { id: 'inspect', label: 'Inspect equipment and record condition', done: completed > 1 },
+  { id: 'verify', label: 'Verify operation and close out findings', done: completed > 2 },
+];
+
+const workOrderDateOffset = (days) => {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
+const jodhpurWorkOrders = bess103WorkOrders.map((workOrder) => {
+  const extra = {
+    'WO-2841': { assetId: 'BESS-JODHUR-BMS-01', status: 'Assigned', dueDate: workOrderDateOffset(2), checklist: defaultChecklist(1) },
+    'WO-2856': { assetId: 'BESS-JODHUR-HVAC-02', status: 'In progress', dueDate: workOrderDateOffset(6), checklist: defaultChecklist(2), reservedParts: ['SP-014'] },
+    'WO-2872': { assetId: 'BESS-JODHUR-CONT-01-RACK-02', status: 'Waiting parts', dueDate: workOrderDateOffset(-2), checklist: defaultChecklist(1), reservedParts: ['SP-001'] },
+    'WO-2891': { assetId: 'BESS-JODHUR-SWG-01', status: 'Done', dueDate: workOrderDateOffset(20), checklist: defaultChecklist(3) },
+  }[workOrder.id];
+  return { ...workOrder, siteId: 'BESS-JODHUR', ...extra };
+});
+
+const otherSiteWorkOrders = mockSites.filter((site) => site.id !== 'BESS-JODHUR').flatMap((site, index) => {
+  const firstNumber = 3001 + index * 2;
+  return [
+    {
+      id: `WO-${firstNumber}`,
+      siteId: site.id,
+      assetId: `${site.id}-BMS-01`,
+      type: 'Preventive',
+      description: 'Quarterly BMS health check and calibration review',
+      priority: 'Minor',
+      dueDate: workOrderDateOffset(4),
+      assignee: ['A. Rao', 'R. Mehta', 'V. Shah'][index],
+      status: 'Scheduled',
+      checklist: defaultChecklist(),
+      reservedParts: [],
+    },
+    {
+      id: `WO-${firstNumber + 1}`,
+      siteId: site.id,
+      assetId: `${site.id}-HVAC-01`,
+      type: 'Corrective',
+      description: 'Inspect HVAC filters and verify cooling performance',
+      priority: site.riskLevel === 'High' ? 'Major' : 'Minor',
+      dueDate: workOrderDateOffset(8),
+      assignee: ['P. Kumar', 'N. Iyer', 'S. Patil'][index],
+      status: 'Assigned',
+      checklist: defaultChecklist(1),
+      reservedParts: [],
+    },
+  ];
+});
+
+const initialWorkOrders = [...jodhpurWorkOrders, ...otherSiteWorkOrders];
 
 export function DemoDataProvider({ children }) {
   const { user } = useAuth();
@@ -27,7 +85,7 @@ export function DemoDataProvider({ children }) {
     acknowledgedBy: null,
     workOrderId: null,
   })));
-  const [workOrders, setWorkOrders] = useState(() => bess103WorkOrders);
+  const [workOrders, setWorkOrders] = useState(() => initialWorkOrders);
   const [events, setEvents] = useState([]);
   const [permit, setPermit] = useState({
     id: 'PTW-2026-0042',
@@ -85,15 +143,21 @@ export function DemoDataProvider({ children }) {
     if (existing) return existing;
 
     const workOrder = {
-      id: `WO-${String(workOrders.length + 2842).padStart(4, '0')}`,
+      id: `WO-${String(Math.max(3000, ...workOrders.map((item) => Number(item.id.replace('WO-', '')) || 0)) + 1).padStart(4, '0')}`,
       alarmId,
       siteId: alarm.siteId,
+      assetId: alarm.equipment?.includes('HVAC') ? `${alarm.siteId}-HVAC-${alarm.equipment.endsWith('-1') ? '01' : '02'}`
+        : alarm.equipment?.includes('FIRE') ? `${alarm.siteId}-FIRE-01`
+          : alarm.equipment?.startsWith('GW') ? `${alarm.siteId}-GW-01`
+            : `${alarm.siteId}-BMS-01`,
       type: alarm.priority === 'Critical' ? 'Emergency' : 'Corrective',
       description: alarm.title,
       priority: alarm.priority,
-      dueDate: '2026-10-16',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       assignee: 'Unassigned',
       status: 'New',
+      checklist: defaultChecklist(),
+      reservedParts: [],
     };
 
     setWorkOrders((current) => [workOrder, ...current]);
@@ -111,6 +175,34 @@ export function DemoDataProvider({ children }) {
       item.id === workOrderId ? { ...item, status } : item
     )));
     addEvent({ type: 'Work order status updated', workOrderId, status, siteId: workOrder.siteId, actor: user });
+  };
+
+  const assignWorkOrder = (workOrderId, assignee, user = 'Demo Operator') => {
+    const workOrder = workOrders.find((item) => item.id === workOrderId);
+    if (!workOrder || workOrder.assignee === assignee) return;
+    setWorkOrders((current) => current.map((item) => item.id === workOrderId ? { ...item, assignee } : item));
+    addEvent({ type: 'Work order assigned', workOrderId, siteId: workOrder.siteId, assignee, actor: user });
+  };
+
+  const updateWorkOrderChecklist = (workOrderId, checklistItemId, done, user = 'Demo Operator') => {
+    const workOrder = workOrders.find((item) => item.id === workOrderId);
+    if (!workOrder) return;
+    setWorkOrders((current) => current.map((item) => item.id === workOrderId
+      ? { ...item, checklist: (item.checklist || []).map((checklistItem) => checklistItem.id === checklistItemId ? { ...checklistItem, done } : checklistItem) }
+      : item));
+    addEvent({ type: done ? 'Inspection checklist item completed' : 'Inspection checklist item reopened', workOrderId, siteId: workOrder.siteId, checklistItemId, actor: user });
+  };
+
+  const reservePartForWorkOrder = (workOrderId, partId, user = 'Demo Operator') => {
+    const workOrder = workOrders.find((item) => item.id === workOrderId);
+    const part = parts.find((item) => item.id === partId);
+    if (!workOrder || !part || (part.siteId && part.siteId !== workOrder.siteId) || part.stock <= part.reserved || (workOrder.reservedParts || []).includes(partId)) return false;
+    setParts((current) => current.map((item) => item.id === partId ? { ...item, reserved: item.reserved + 1 } : item));
+    setWorkOrders((current) => current.map((item) => item.id === workOrderId
+      ? { ...item, reservedParts: [...(item.reservedParts || []), partId] }
+      : item));
+    addEvent({ type: 'Spare part reserved for work order', workOrderId, siteId: workOrder.siteId, partId, partName: part.name, actor: user });
+    return true;
   };
 
   const updatePermit = (changes, user = 'Demo Operator') => {
@@ -135,6 +227,7 @@ export function DemoDataProvider({ children }) {
     isSimulated: true,
     accessibleSiteIds,
     accessibleSites: mockSites.filter((site) => accessibleSiteIds.includes(site.id)),
+    accessibleAlarms: alarms.filter((alarm) => accessibleSiteIds.includes(alarm.siteId)),
     selectedSiteId,
     selectedSite: mockSites.find((site) => site.id === selectedSiteId) || null,
     selectSite,
@@ -146,6 +239,9 @@ export function DemoDataProvider({ children }) {
     acknowledgeAlarm,
     createWorkOrderFromAlarm,
     updateWorkOrderStatus,
+    assignWorkOrder,
+    updateWorkOrderChecklist,
+    reservePartForWorkOrder,
     updatePermit,
     reservePart,
   }), [tick, lastUpdated, alarms, workOrders, events, permit, parts, accessibleSiteIds, selectedSiteId]);

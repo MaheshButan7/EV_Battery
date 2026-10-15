@@ -20,7 +20,7 @@ export const navigationGroups = [
   {
     label: 'Operations',
     items: [
-      { id: 'fleet', name: 'Operational Overview', path: '/', icon: LayoutDashboard },
+      { id: 'fleet', name: 'Fleet Overview', path: '/', icon: LayoutDashboard },
       { id: 'map', name: 'Site Map', path: '/map', icon: Map },
       { id: 'site', name: 'Site Operations', path: '/site/:siteId', icon: Zap },
       { id: 'sld', name: 'Site SLD', path: '/site/:siteId/sld', icon: Activity },

@@ -29,7 +29,6 @@ export async function login(email, password) {
     throw new Error('Invalid email or password. Please try again.');
   }
   const session = { email: user.email, name: user.name, role: user.role, siteIds: user.siteIds };
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
 }
 
@@ -38,11 +37,8 @@ export async function logout() {
 }
 
 export async function getSession() {
-  const raw = localStorage.getItem(SESSION_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  // Demo sessions live only in memory so a fresh app load always starts at login.
+  // Clear sessions saved by earlier demo versions to prevent automatic sign-in.
+  localStorage.removeItem(SESSION_KEY);
+  return null;
 }

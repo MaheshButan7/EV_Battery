@@ -18,7 +18,7 @@ export default function Header({ onMenuClick }) {
   const siteIdMatch = isSitePage ? location.pathname.split('/site/')[1]?.split('/')[0] : null;
   const site = selectedSite?.id === siteIdMatch ? selectedSite : null;
   const pageLabels = {
-    '/': 'Operational Overview',
+    '/': 'Fleet Overview',
     '/map': 'Site Map',
     '/alarms': 'Alarm & Event Management',
     '/assets': 'Asset Registry',

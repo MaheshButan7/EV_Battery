@@ -20,7 +20,7 @@ function getPosition(site) {
   };
 }
 
-export default function SiteLocationMap({ sites = [] }) {
+export default function SiteLocationMap({ sites = [], onSelectSite }) {
   const navigate = useNavigate();
   const [focusedSite, setFocusedSite] = useState(null);
   const statuses = ['Charging', 'Discharging', 'Offline', 'Fault'];
@@ -75,7 +75,7 @@ export default function SiteLocationMap({ sites = [] }) {
               aria-label={`Open ${site.name}, ${site.status}, state of charge ${site.soc}%`}
               onMouseEnter={() => setFocusedSite(site)} onMouseLeave={() => setFocusedSite(null)}
               onFocus={() => setFocusedSite(site)} onBlur={() => setFocusedSite(null)}
-              onClick={() => navigate(`/site/${site.id}`)}
+              onClick={() => { onSelectSite?.(site.id); navigate(`/site/${site.id}`); }}
             >
               <span className={`block h-3.5 w-3.5 rounded-full ring-[5px] transition-transform group-hover:scale-125 ${color.dot} ${color.halo}`} />
               <span className={`absolute top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border border-white bg-white/95 px-1.5 py-0.5 font-mono text-[9px] font-bold text-slate-600 shadow-sm ${labelOnLeft ? 'right-full mr-2' : 'left-full ml-2'}`}>
