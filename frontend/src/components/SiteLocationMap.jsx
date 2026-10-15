@@ -8,6 +8,7 @@ const STATUS = {
   Discharging: { dot: 'bg-cyan-500', halo: 'ring-cyan-500/20' },
   Idle: { dot: 'bg-slate-400', halo: 'ring-slate-400/20' },
   Fault: { dot: 'bg-rose-500', halo: 'ring-rose-500/20' },
+  Offline: { dot: 'bg-slate-500', halo: 'ring-slate-500/20' },
 };
 
 function getPosition(site) {
@@ -22,7 +23,7 @@ function getPosition(site) {
 export default function SiteLocationMap({ sites = [] }) {
   const navigate = useNavigate();
   const [focusedSite, setFocusedSite] = useState(null);
-  const statuses = ['Charging', 'Discharging', 'Idle', 'Fault'];
+  const statuses = ['Charging', 'Discharging', 'Offline', 'Fault'];
 
   return (
     <section className="surface-card flex h-full min-h-[500px] flex-col rounded-2xl border bg-white p-5 dark:bg-slate-900 lg:p-6">

@@ -143,7 +143,7 @@ export default function CellHeatmap({ containers = [] }) {
           </div>
         ) : (
           <span className="text-slate-400 dark:text-slate-500 italic">
-            Hover over a cell to inspect telemetry — {container.name}, {rack.name} (8 modules × 12 cells = 96 cells)
+            Hover over a cell to inspect telemetry — {container.name}, {rack.name} (10 modules × 50 cells = 500 cells)
           </span>
         )}
       </div>

@@ -7,7 +7,7 @@ const ThemeContext = createContext({
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('ev_twin_theme');
+    const saved = localStorage.getItem('bess_command_center_theme');
     if (saved) return saved;
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
@@ -22,7 +22,7 @@ export function ThemeProvider({ children }) {
     } else {
       root.classList.remove('dark');
     }
-    localStorage.setItem('ev_twin_theme', theme);
+    localStorage.setItem('bess_command_center_theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

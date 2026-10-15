@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { AlertOctagon, AlertTriangle, Info, Siren, AlertCircle } from 'lucide-react';
 import { getAlarmPriorityStyle } from '../utils/formatters';
+import { Check, ClipboardPlus } from 'lucide-react';
 
 const priorityIcons = {
   Critical: AlertOctagon,
@@ -11,7 +12,7 @@ const priorityIcons = {
   Info: Info,
 };
 
-export default function AlarmList({ alarms = [] }) {
+export default function AlarmList({ alarms = [], onAcknowledge, onCreateWorkOrder }) {
   return (
     <div className="space-y-2.5">
       {alarms.map((alarm) => {
@@ -54,9 +55,34 @@ export default function AlarmList({ alarms = [] }) {
                 )}
               </div>
             </div>
-            <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 shrink-0 whitespace-nowrap">
-              {alarm.timestamp}
-            </span>
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                {alarm.timestamp}
+              </span>
+              {alarm.state && (
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">{alarm.state}</span>
+              )}
+              <div className="flex gap-1.5">
+                {onAcknowledge && alarm.state !== 'Acknowledged' && alarm.state !== 'Cleared' && (
+                  <button
+                    type="button"
+                    onClick={() => onAcknowledge(alarm.id)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300"
+                  >
+                    <Check className="h-3 w-3" /> Acknowledge
+                  </button>
+                )}
+                {onCreateWorkOrder && alarm.state !== 'Cleared' && (
+                  <button
+                    type="button"
+                    onClick={() => onCreateWorkOrder(alarm.id)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/25 bg-cyan-500/10 px-2 py-1 text-[10px] font-semibold text-cyan-700 hover:bg-cyan-500/20 dark:text-cyan-300"
+                  >
+                    <ClipboardPlus className="h-3 w-3" /> {alarm.workOrderId ? alarm.workOrderId : 'Work order'}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         );
       })}

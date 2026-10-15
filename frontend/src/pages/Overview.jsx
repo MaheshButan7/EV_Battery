@@ -1,321 +1,130 @@
-import React, { useEffect, useState } from 'react';
-import { getFleetOverview, getSites } from '../services/api';
-import KpiCard from '../components/KpiCard';
-import ChartCard from '../components/ChartCard';
-import SiteTable from '../components/SiteTable';
-import AlarmList from '../components/AlarmList';
-import SiteLocationMap from '../components/SiteLocationMap';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AlertTriangle, ArrowRight, BatteryCharging, CheckCircle2, Map, ShieldAlert } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { getFleetOverview } from '../services/api';
+import { useDemoData } from '../hooks/useDemoData';
 import { useTheme } from '../hooks/useTheme';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  Legend,
-  ReferenceLine,
-} from 'recharts';
+import KpiCard from '../components/KpiCard';
+import AlarmList from '../components/AlarmList';
+import ChartCard from '../components/ChartCard';
+import SimulatedDataBadge from '../components/ui/SimulatedDataBadge';
+import Button from '../components/ui/Button';
+import { StatusBadge, RiskBadge } from '../components/StatusBadge';
 
-// Tooltip style factory
 function tooltipStyle(isDark) {
   return {
-    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-    borderColor: isDark ? '#334155' : '#cbd5e1',
+    backgroundColor: isDark ? '#0e1a2b' : '#ffffff',
+    borderColor: isDark ? '#26364b' : '#dfe7f1',
     borderRadius: '0.75rem',
-    fontSize: '12px',
-    color: isDark ? '#f8fafc' : '#0f172a',
+    fontSize: '11px',
+    color: isDark ? '#f8fafc' : '#172033',
   };
 }
 
 export default function Overview() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const gridColor = isDark ? '#1e293b' : '#e2e8f0';
-  const axisColor = isDark ? '#94a3b8' : '#64748b';
-
-  const [fleetData, setFleetData] = useState(null);
+  const { alarms, acknowledgeAlarm, createWorkOrderFromAlarm, selectedSite } = useDemoData();
+  const [overview, setOverview] = useState(null);
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getFleetOverview(), getSites()]).then(([overview, siteList]) => {
-      setFleetData(overview);
-      setSites(siteList);
-      setLoading(false);
-    });
-  }, []);
+    getFleetOverview()
+      .then((overviewData) => {
+        setOverview(overviewData);
+        setSites(selectedSite ? [selectedSite] : []);
+      })
+      .finally(() => setLoading(false));
+  }, [selectedSite]);
 
-  if (loading || !fleetData) {
-    return (
-      <div className="flex items-center justify-center h-64 text-slate-500">
-        Loading fleet telemetry…
-      </div>
-    );
+  const activeAlarms = useMemo(() => alarms.filter((alarm) => alarm.state === 'Active'), [alarms]);
+  const criticalAlarms = activeAlarms.filter((alarm) => alarm.priority === 'Critical');
+  const priorityAlarms = activeAlarms.filter((alarm) => ['Critical', 'Major'].includes(alarm.priority)).slice(0, 4);
+  const reportingSites = selectedSite?.commsStatus === 'Online' ? 1 : 0;
+
+  if (loading || !overview) {
+    return <div className="flex min-h-[420px] items-center justify-center text-sm text-slate-500">Loading site operations data…</div>;
   }
 
-  const { kpis, sohTrend, sohBySite, energyLast7Days, fleetStatusCounts, recentAlarms } = fleetData;
+  const { kpis, energyLast7Days } = overview;
+  const scopedKpis = selectedSite ? {
+    ...kpis,
+    installedCapacity: { ...kpis.installedCapacity, valueMW: selectedSite.capacityMW, valueMWh: selectedSite.capacityMWh },
+    avgFleetSoh: { ...kpis.avgFleetSoh, value: selectedSite.soh },
+    fleetAvailability: { ...kpis.fleetAvailability, value: selectedSite.availability },
+  } : kpis;
+  const siteRows = selectedSite ? [selectedSite] : [];
 
   return (
-    <div className="p-4 lg:p-8 space-y-8 max-w-[1600px] mx-auto">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8">
+      <header className="flex flex-col justify-between gap-4 border-b border-slate-200/80 pb-5 md:flex-row md:items-end dark:border-slate-800/80">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Fleet Overview
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Real-time state of health, energy throughput, and predictive analytics across all BESS sites.
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">OPERATIONS CONTROL VIEW</p>
+          <h1 className="text-[1.65rem] font-bold tracking-[-0.025em] text-slate-950 dark:text-white">Site Operations Overview</h1>
+          <p className="mt-2 max-w-2xl text-[13px] leading-5 text-slate-500 dark:text-slate-400">
+            A single operational view of site availability, power, battery condition, safety and alarm response.
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 self-start md:self-auto">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          5 Sites Live
-        </span>
-      </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <SimulatedDataBadge />
+          <Button as={Link} to="/map" variant="secondary" size="sm" icon={Map}>Open site map</Button>
+        </div>
+      </header>
 
-      {/* KPI Row — 5 cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard
-          type="totalSites"
-          label={kpis.totalSites.label}
-          value={kpis.totalSites.value}
-          delta={kpis.totalSites.delta}
-          deltaType={kpis.totalSites.deltaType}
-        />
-        <KpiCard
-          type="installedCapacity"
-          label={kpis.installedCapacity.label}
-          value={`${kpis.installedCapacity.valueMW} MW`}
-          delta={kpis.installedCapacity.delta}
-          deltaType={kpis.installedCapacity.deltaType}
-        />
-        <KpiCard
-          type="avgFleetSoh"
-          label={kpis.avgFleetSoh.label}
-          value={kpis.avgFleetSoh.value}
-          suffix="%"
-          delta={kpis.avgFleetSoh.delta}
-          deltaType={kpis.avgFleetSoh.deltaType}
-        />
-        <KpiCard
-          type="activeAlarms"
-          label={kpis.activeAlarms.label}
-          value={kpis.activeAlarms.value}
-          delta={kpis.activeAlarms.delta}
-          deltaType={kpis.activeAlarms.deltaType}
-        />
-        <KpiCard
-          type="fleetAvailability"
-          label={kpis.fleetAvailability.label}
-          value={kpis.fleetAvailability.value}
-          suffix="%"
-          delta={kpis.fleetAvailability.delta}
-          deltaType={kpis.fleetAvailability.deltaType}
-        />
-      </div>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5" aria-label="Site performance indicators">
+        <KpiCard type="totalSites" label="Site reporting status" value={`${reportingSites} / 1`} delta={reportingSites ? 'Communications online' : 'Communications attention required'} deltaType={reportingSites ? 'positive' : 'warning'} />
+        <KpiCard type="installedCapacity" label="Installed capacity" value={`${scopedKpis.installedCapacity.valueMW} MW`} delta={`${scopedKpis.installedCapacity.valueMWh} MWh energy capacity`} deltaType="neutral" />
+        <KpiCard type="avgFleetSoh" label="Site SoH" value={scopedKpis.avgFleetSoh.value} suffix="%" delta={scopedKpis.avgFleetSoh.delta} deltaType="negative" />
+        <KpiCard type="activeAlarms" label="Active alarms" value={activeAlarms.length} delta={`${criticalAlarms.length} Critical`} deltaType={criticalAlarms.length ? 'negative' : 'positive'} />
+        <KpiCard type="fleetAvailability" label="Site availability" value={scopedKpis.fleetAvailability.value} suffix="%" delta={scopedKpis.fleetAvailability.delta} deltaType="negative" />
+      </section>
 
-      {/* Row 2: SoH Trend + Status Donut */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Fleet SoH Trend (12 months) */}
-        <div className="lg:col-span-2">
-          <ChartCard
-            title="Fleet SoH Trend (12 Months)"
-            subtitle="Average State of Health across all 5 sites"
-            badgeText="Telemetry"
-          >
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={sohTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="sohTrendGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                <XAxis dataKey="month" stroke={axisColor} fontSize={11} tickLine={false} />
-                <YAxis
-                  domain={[80, 100]}
-                  ticks={[80, 84, 88, 92, 96, 100]}
-                  stroke={axisColor}
-                  fontSize={11}
-                  tickLine={false}
-                  unit="%"
-                />
-                <Tooltip
-                  contentStyle={tooltipStyle(isDark)}
-                  formatter={(val) => [`${val}%`, 'Avg Fleet SoH']}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="avgSoh"
-                  stroke="#10b981"
-                  strokeWidth={2.5}
-                  fill="url(#sohTrendGrad)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </ChartCard>
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.7fr]" aria-label="Priority operations">
+        <div className="surface-card rounded-2xl border p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div><h2 className="text-base font-bold text-slate-950 dark:text-white">Priority site status</h2><p className="mt-1 text-xs text-slate-500">Sites ranked by risk and current operating condition.</p></div>
+            <Link to="/asset-health" className="hidden items-center gap-1 text-xs font-bold text-cyan-700 sm:inline-flex dark:text-cyan-300">Asset health <ArrowRight className="h-3.5 w-3.5" /></Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[660px] text-xs">
+              <thead><tr className="border-b border-slate-200 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-800"><th className="pb-3">Site</th><th className="pb-3">Operating state</th><th className="pb-3">SoC / SoH</th><th className="pb-3">Availability</th><th className="pb-3">Alarms</th><th className="pb-3">Risk</th></tr></thead>
+              <tbody>{siteRows.map((site) => <tr key={site.id} className="border-b border-slate-100 dark:border-slate-800/80"><td className="py-3"><Link to={`/site/${site.id}`} className="font-bold text-cyan-700 hover:text-cyan-900 dark:text-cyan-300">{site.name}</Link><span className="mt-0.5 block font-mono text-[10px] text-slate-400">{site.id}</span></td><td className="py-3"><StatusBadge status={site.status} /><span className="ml-2 text-[10px] text-slate-400">{site.commsStatus}</span></td><td className="py-3 tabular-nums text-slate-700 dark:text-slate-300">{site.soc}% / {site.soh}%</td><td className="py-3 tabular-nums text-slate-700 dark:text-slate-300">{site.availability}%</td><td className="py-3">{site.activeAlarms > 0 ? <span className="inline-flex items-center gap-1 font-bold text-rose-600 dark:text-rose-400"><AlertTriangle className="h-3 w-3" />{site.activeAlarms}</span> : <span className="text-slate-400">—</span>}</td><td className="py-3"><RiskBadge risk={site.riskLevel} /></td></tr>)}</tbody>
+            </table>
+          </div>
         </div>
 
-        {/* Fleet Status Donut */}
-        <ChartCard title="Fleet Operational Status" subtitle="Real-time site status breakdown">
-          <div className="flex flex-col items-center justify-center">
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={fleetStatusCounts}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={80}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {fleetStatusCounts.map((entry, i) => (
-                    <Cell
-                      key={`cell-${i}`}
-                      fill={entry.fill}
-                      stroke={isDark ? '#0f172a' : '#ffffff'}
-                      strokeWidth={2}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={tooltipStyle(isDark)} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="grid grid-cols-2 gap-3 w-full mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-              {fleetStatusCounts.map((item) => (
-                <div key={item.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
-                    <span className="text-slate-600 dark:text-slate-400 font-medium">{item.name}</span>
-                  </div>
-                  <span className="font-bold text-slate-900 dark:text-white tabular-nums">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </ChartCard>
-      </div>
-
-      {/* Row 3: Energy 7-Day + SoH by Site */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Energy charged vs discharged last 7 days */}
-        <ChartCard
-          title="Energy Throughput — Last 7 Days"
-          subtitle="Fleet-wide charged vs discharged (MWh)"
-          badgeText="Energy"
-        >
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart
-              data={energyLast7Days}
-              margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
-              barCategoryGap="30%"
-              barGap={4}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-              <XAxis dataKey="day" stroke={axisColor} fontSize={11} tickLine={false} />
-              <YAxis stroke={axisColor} fontSize={11} tickLine={false} unit=" MWh" />
-              <Tooltip
-                contentStyle={tooltipStyle(isDark)}
-                formatter={(val, name) => [`${val} MWh`, name === 'charged' ? 'Charged' : 'Discharged']}
-              />
-              <Legend
-                iconType="circle"
-                iconSize={8}
-                formatter={(val) => (val === 'charged' ? 'Charged' : 'Discharged')}
-                wrapperStyle={{ fontSize: '11px' }}
-              />
-              <Bar dataKey="charged" fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="discharged" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+        <ChartCard title="Energy movement" subtitle="Charged and discharged energy over the last 7 days" badgeText="MWh">
+          <ResponsiveContainer width="100%" height={245}>
+            <BarChart data={energyLast7Days} margin={{ top: 8, right: 4, left: -22, bottom: 0 }} barCategoryGap="28%">
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#26364b' : '#e2eaf2'} />
+              <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} fontSize={10} tickLine={false} />
+              <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} fontSize={10} tickLine={false} />
+              <Tooltip contentStyle={tooltipStyle(isDark)} formatter={(value, name) => [`${value} MWh`, name === 'charged' ? 'Charged' : 'Discharged']} />
+              <Bar dataKey="charged" fill="#10b981" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="discharged" fill="#06b6d4" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
+      </section>
 
-        {/* SoH by Site */}
-        <ChartCard
-          title="SoH by Site"
-          subtitle="Current State of Health per site (%)"
-        >
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart
-              data={sohBySite}
-              margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
-              layout="vertical"
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
-              <XAxis
-                type="number"
-                domain={[60, 100]}
-                ticks={[60, 70, 80, 90, 100]}
-                stroke={axisColor}
-                fontSize={11}
-                tickLine={false}
-                unit="%"
-              />
-              <YAxis
-                type="category"
-                dataKey="site"
-                stroke={axisColor}
-                fontSize={11}
-                tickLine={false}
-                width={72}
-              />
-              <Tooltip
-                contentStyle={tooltipStyle(isDark)}
-                formatter={(val) => [`${val}%`, 'SoH']}
-              />
-              <ReferenceLine x={70} stroke="#ef4444" strokeDasharray="4 3" strokeWidth={1.5} />
-              <Bar dataKey="soh" radius={[0, 4, 4, 0]} maxBarSize={22}>
-                {sohBySite.map((entry, i) => (
-                  <Cell key={`soh-${i}`} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_0.7fr]" aria-label="Alarm response">
+        <ChartCard title="Priority alarm queue" subtitle="Critical and major alarms requiring operator review" badgeText={`${priorityAlarms.length} priority`}>
+          {priorityAlarms.length > 0 ? <AlarmList alarms={priorityAlarms} onAcknowledge={acknowledgeAlarm} onCreateWorkOrder={createWorkOrderFromAlarm} /> : <div className="flex min-h-[160px] flex-col items-center justify-center text-center"><CheckCircle2 className="h-8 w-8 text-emerald-500" /><p className="mt-3 text-sm font-bold">No priority alarms</p><p className="mt-1 text-xs text-slate-500">All critical and major alarms are cleared or acknowledged.</p></div>}
         </ChartCard>
-      </div>
-
-      {/* Row 4: India Map + Recent Alarms */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <SiteLocationMap sites={sites} />
-        </div>
-        <div className="lg:col-span-2">
-          <ChartCard
-            title="Recent Fleet Alarms"
-            subtitle="Prioritised alarm feed across all sites"
-            badgeText="Live Feed"
-          >
-            <AlarmList alarms={recentAlarms} />
-          </ChartCard>
-        </div>
-      </div>
-
-      {/* Row 5: Sites Needing Attention */}
-      <div className="surface-card p-6 rounded-2xl bg-white dark:bg-slate-900 border space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-              Sites Needing Attention
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Ranked by risk level and active alarms. Click any row to open the site dashboard.
-            </p>
+        <div className="surface-card rounded-2xl border p-5">
+          <div className="flex items-center gap-2"><ShieldAlert className="h-5 w-5 text-amber-500" /><h2 className="text-base font-bold text-slate-950 dark:text-white">Operator actions</h2></div>
+          <div className="mt-5 space-y-3">
+            <Link to="/alarms" className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-xs font-semibold hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-800 dark:hover:border-cyan-800 dark:hover:bg-cyan-950/30"><span>Review all alarms and events</span><ArrowRight className="h-4 w-4 text-cyan-500" /></Link>
+            <Link to="/maintenance" className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-xs font-semibold hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-800 dark:hover:border-cyan-800 dark:hover:bg-cyan-950/30"><span>Open maintenance work orders</span><ArrowRight className="h-4 w-4 text-cyan-500" /></Link>
+            <Link to="/maintenance/permits" className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-xs font-semibold hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-800 dark:hover:border-cyan-800 dark:hover:bg-cyan-950/30"><span>Review safety permits</span><ArrowRight className="h-4 w-4 text-cyan-500" /></Link>
+            <Link to="/reports" className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-xs font-semibold hover:border-cyan-300 hover:bg-cyan-50 dark:border-slate-800 dark:hover:border-cyan-800 dark:hover:bg-cyan-950/30"><span>Generate operations report</span><ArrowRight className="h-4 w-4 text-cyan-500" /></Link>
           </div>
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
-            {sites.length} Sites Monitored
-          </span>
         </div>
-        <SiteTable sites={sites} />
-      </div>
+      </section>
+
+      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white/70 p-3 text-[11px] text-slate-500 dark:border-slate-800 dark:bg-slate-900/60"><BatteryCharging className="h-4 w-4 text-cyan-500" /> Detailed cell, PCS, trend, map and predictive-maintenance analysis is available from the dedicated site and insight pages.</div>
     </div>
   );
 }

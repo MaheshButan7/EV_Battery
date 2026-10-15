@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getSite, getSiteAlarms, getSites } from '../services/api';
+import { useParams, Link } from 'react-router-dom';
+import { getSite, getSiteAlarms } from '../services/api';
 import ChartCard from '../components/ChartCard';
 import SohRing from '../components/SohRing';
 import MetricBar from '../components/MetricBar';
-import RulChart from '../components/RulChart';
-import CellHeatmap from '../components/CellHeatmap';
-import AnomalyList from '../components/AnomalyList';
-import AlarmList from '../components/AlarmList';
+import SimulatedDataBadge from '../components/ui/SimulatedDataBadge';
+import { useDemoData } from '../hooks/useDemoData';
 import { StatusBadge } from '../components/StatusBadge';
 import { useTheme } from '../hooks/useTheme';
-import { getAlarmPriorityStyle, formatPowerMW } from '../utils/formatters';
+import { formatPowerMW } from '../utils/formatters';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -25,9 +23,9 @@ import {
   ReferenceLine,
 } from 'recharts';
 import {
-  MapPin, Wifi, WifiOff, RefreshCw, ChevronDown,
+  MapPin, Wifi, WifiOff, RefreshCw,
   Zap, Thermometer, Activity, Battery, Shield,
-  Wrench, Clock, User, AlertTriangle,
+  ArrowUpRight,
 } from 'lucide-react';
 
 function tooltipStyle(isDark) {
@@ -40,75 +38,23 @@ function tooltipStyle(isDark) {
   };
 }
 
-// ─── Equipment Grid ───────────────────────────────────────────────────────────
-function EquipmentCard({ icon: Icon, label, status, lines = [], warn = false }) {
-  const good = ['active', 'running', 'normal', 'closed', 'online'].includes(status?.toLowerCase());
-  const isFault = status?.toLowerCase() === 'fault';
-  const tone = isFault
-    ? 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-300'
-    : warn
-      ? 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-300'
-      : good
-        ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300'
-        : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600';
-  const dot = isFault ? 'bg-rose-500' : warn ? 'bg-amber-500' : good ? 'bg-emerald-500' : 'bg-slate-400';
-
-  return (
-    <div className="flex min-h-[142px] flex-col gap-3 p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/70 transition-colors hover:border-cyan-500/30 hover:bg-white dark:hover:bg-slate-800/70">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-cyan-700 shadow-sm dark:bg-slate-900 dark:text-cyan-300">
-            <Icon className="w-4 h-4 shrink-0" />
-          </span>
-          <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{label}</span>
-        </div>
-      </div>
-      <span className={`inline-flex w-fit items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-semibold ${tone}`}>
-        <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-        {status}
-      </span>
-      <div className="space-y-1">
-        {lines.map((l, i) => (
-          <div key={i} className="flex items-center justify-between gap-2 border-t border-slate-200/70 pt-1.5 text-[11px] dark:border-slate-700/70">
-            <span className="text-slate-500 dark:text-slate-400">{l.label}</span>
-            <span className="text-right font-mono font-semibold tabular-nums text-slate-700 dark:text-slate-200">{l.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Work Order priority chip ─────────────────────────────────────────────────
-function WoPriority({ priority }) {
-  const s = getAlarmPriorityStyle(priority);
-  return (
-    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${s.badge}`}>
-      {priority}
-    </span>
-  );
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function SiteDashboard() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const gridColor = isDark ? '#1e293b' : '#e2e8f0';
   const axisColor = isDark ? '#94a3b8' : '#64748b';
+  const { alarms } = useDemoData();
 
   const [site, setSite] = useState(null);
-  const [allSites, setAllSites] = useState([]);
   const [siteAlarms, setSiteAlarms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([getSite(id), getSites(), getSiteAlarms(id)]).then(([s, list, alarms]) => {
+    Promise.all([getSite(id), getSiteAlarms(id)]).then(([s, alarms]) => {
       setSite(s);
-      setAllSites(list);
       setSiteAlarms(alarms);
       setLoading(false);
     });
@@ -123,121 +69,199 @@ export default function SiteDashboard() {
   }
 
   const eq = site.equipment;
+  const visibleSiteAlarms = alarms.filter((alarm) => alarm.siteId === site.id);
   const powerAbs = Math.abs(site.powerMW);
   const isCharging = site.status === 'Charging';
   const isDischarging = site.status === 'Discharging';
+  const activeAlarms = visibleSiteAlarms.filter((alarm) => alarm.state === 'Active');
+  const priorityAlarms = activeAlarms.filter((alarm) => ['Critical', 'Major'].includes(alarm.priority));
+  const equipmentItems = [
+    { label: 'PCS', status: eq.pcs.status },
+    { label: 'Transformer', status: eq.transformer.status },
+    { label: 'Switchgear', status: eq.switchgear.status },
+    { label: 'Fire protection', status: eq.fireSuppression.status },
+    { label: 'UPS', status: eq.ups.status },
+  ];
 
   return (
-    <div className="p-4 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
+    <div className="mx-auto max-w-[1600px] space-y-6 p-4 lg:p-8">
 
-      {/* ── Site Header Strip ───────────────────────────────────────────── */}
-      <div className="surface-card flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900 border">
-        <div className="flex flex-col gap-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-xs font-mono font-bold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+      {/* ── Site identity and control actions ───────────────────────────── */}
+      <section className="surface-card overflow-hidden rounded-2xl border">
+        <div className="flex flex-col justify-between gap-5 border-b border-slate-200/80 p-5 dark:border-slate-800/80 lg:flex-row lg:items-start lg:p-6">
+          <div className="min-w-0">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">SITE OPERATIONS</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">{site.name}</h1>
+              <span className="rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 font-mono text-[10px] font-bold text-cyan-700 dark:text-cyan-300">
               {site.id}
-            </span>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{site.name}</h1>
-            <StatusBadge status={site.status} />
-            {/* Comms indicator */}
-            <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded border ${
-              site.commsStatus === 'Online'
-                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-            }`}>
-              {site.commsStatus === 'Online'
-                ? <Wifi className="w-3 h-3" />
-                : <WifiOff className="w-3 h-3" />}
-              {site.commsStatus}
-            </span>
-          </div>
-          <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
-            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{site.location}</span>
-            <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{formatPowerMW(site.powerMW)}</span>
-            <span className="flex items-center gap-1"><Battery className="w-3 h-3" />SoC {site.soc}%</span>
-            <span className="flex items-center gap-1"><RefreshCw className="w-3 h-3" />Updated {site.lastUpdated}</span>
-          </div>
-        </div>
-
-        {/* Site Switcher */}
-        <div className="relative shrink-0">
-          <button
-            onClick={() => setSwitcherOpen((o) => !o)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-            id="site-switcher-btn"
-          >
-            Switch Site <ChevronDown className="w-4 h-4" />
-          </button>
-          {switcherOpen && (
-            <div className="absolute right-0 top-full mt-1 w-64 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl z-50">
-              {allSites.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => { navigate(`/site/${s.id}`); setSwitcherOpen(false); }}
-                  className={`w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors first:rounded-t-xl last:rounded-b-xl ${s.id === site.id ? 'text-cyan-600 dark:text-cyan-400 font-semibold' : 'text-slate-700 dark:text-slate-200'}`}
-                >
-                  <span>{s.name}</span>
-                  <span className="text-xs font-mono text-slate-400">{s.id}</span>
-                </button>
-              ))}
+              </span>
+              <StatusBadge status={site.status} />
+              <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-semibold ${
+                site.commsStatus === 'Online'
+                  ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                  : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+              }`}>
+                {site.commsStatus === 'Online' ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
+                Telemetry {site.commsStatus}
+              </span>
             </div>
-          )}
+            <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+              Live operating condition, dispatch telemetry and site-level response priorities.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-cyan-600" />{site.location}</span>
+              <span className="inline-flex items-center gap-1.5"><Battery className="h-3.5 w-3.5 text-cyan-600" />{site.capacityMW} MW / {site.capacityMWh} MWh</span>
+              <span className="inline-flex items-center gap-1.5"><RefreshCw className="h-3.5 w-3.5 text-cyan-600" />Updated {site.lastUpdated}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <SimulatedDataBadge />
+          <Link
+            to={`/site/${site.id}/sld`}
+            className="rounded-xl border border-cyan-500/25 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-700 transition-colors hover:bg-cyan-500/20 dark:text-cyan-300"
+          >
+            Open SLD
+          </Link>
+          <Link
+            to={`/site/${site.id}/battery`}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          >
+            Battery health
+          </Link>
+          <Link
+            to={`/site/${site.id}/pcs`}
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          >
+            Power conversion
+          </Link>
+          </div>
         </div>
+        <div className="grid grid-cols-2 divide-x divide-y divide-slate-200/80 border-t border-slate-200/80 dark:divide-slate-800/80 dark:border-slate-800/80 sm:grid-cols-4 xl:grid-cols-8 xl:divide-y-0">
+          {[
+            { label: 'Current power', value: formatPowerMW(site.powerMW), note: isCharging ? 'Charging' : isDischarging ? 'Discharging' : 'Idle', tone: site.status === 'Fault' ? 'text-rose-600 dark:text-rose-300' : 'text-slate-950 dark:text-white' },
+            { label: 'State of charge', value: `${site.soc}%`, note: 'SOC', tone: 'text-slate-950 dark:text-white' },
+            { label: 'State of health', value: `${site.soh}%`, note: `${site.rul} yrs estimated RUL`, tone: site.soh < 90 ? 'text-amber-600 dark:text-amber-300' : 'text-slate-950 dark:text-white' },
+            { label: 'State of energy', value: `${site.soeMWh} MWh`, note: `of ${site.capacityMWh} MWh`, tone: 'text-slate-950 dark:text-white' },
+            { label: 'Max cell temperature', value: `${site.maxCellTemperature} °C`, note: 'Across all cells', tone: site.maxCellTemperature > 45 ? 'text-rose-600 dark:text-rose-300' : 'text-slate-950 dark:text-white' },
+            { label: 'Voltage imbalance', value: `${site.voltageImbalance} V`, note: 'Cell spread', tone: site.voltageImbalance > 0.1 ? 'text-amber-600 dark:text-amber-300' : 'text-slate-950 dark:text-white' },
+            { label: 'Availability', value: `${site.availability}%`, note: '30-day rolling', tone: 'text-slate-950 dark:text-white' },
+            { label: 'Round-trip efficiency', value: `${site.roundTripEfficiency}%`, note: 'Measured RTE', tone: 'text-slate-950 dark:text-white' },
+          ].map((metric) => (
+            <div key={metric.label} className="min-w-0 px-4 py-4 first:pl-5 last:pr-5 lg:px-5">
+              <p className="truncate text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:text-slate-500">{metric.label}</p>
+              <p className={`mt-1.5 truncate text-xl font-bold tracking-tight tabular-nums ${metric.tone}`}>{metric.value}</p>
+              <p className="mt-1 truncate text-[11px] text-slate-500 dark:text-slate-400">{metric.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {site.commsStatus !== 'Online' && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-800 dark:text-amber-200">
+          <WifiOff className="mt-0.5 h-5 w-5 shrink-0" />
+          <div>
+            <p className="text-sm font-bold">Communication link unavailable</p>
+            <p className="mt-1 text-xs text-amber-700/80 dark:text-amber-200/80">
+              Last telemetry received {site.lastUpdated}. Local gateway buffering is active; values remain marked as last known state until the link recovers.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Battery and operating telemetry ───────────────────────────── */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="surface-card grid grid-cols-1 items-center gap-6 rounded-2xl border p-5 lg:grid-cols-[220px_minmax(0,1fr)] lg:p-6">
+          <div className="flex flex-col items-center">
+            <div className="self-start">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-600 dark:text-cyan-400">Battery condition</p>
+              <h2 className="mt-1 text-sm font-bold text-slate-900 dark:text-white">LFP storage system</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{site.id} · live site telemetry</p>
+            </div>
+            <SohRing soh={site.soh} />
+          </div>
+          <div className="grid grid-cols-1 gap-5 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-3 lg:border-l lg:border-t-0 lg:py-2 lg:pl-7">
+            <MetricBar label="State of charge" valueText={`${site.soc}%`} percentage={site.soc} color="cyan" minText="0%" maxText="100%" />
+            <MetricBar label="Average cell temperature" valueText={`${site.temperature} °C`} percentage={((site.temperature - 20) / 30) * 100} color={site.temperature > 35 ? 'rose' : site.temperature > 30 ? 'amber' : 'emerald'} minText="20°C" maxText="50°C" />
+            <MetricBar label="DC bus voltage" valueText={`${site.dcVoltage} V`} percentage={((site.dcVoltage - 1200) / 100) * 100} color="blue" minText="1200 V" maxText="1300 V" />
+          </div>
+        </section>
+
+        <section className="surface-card rounded-2xl border p-5 lg:p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-600 dark:text-cyan-400">Control room</p>
+              <h2 className="mt-1 text-sm font-bold text-slate-900 dark:text-white">Readiness status</h2>
+            </div>
+            <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${site.status === 'Fault' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}`}>
+              {site.status === 'Fault' ? 'Action required' : 'Operational'}
+            </span>
+          </div>
+          <div className="mt-4 space-y-2.5">
+            {equipmentItems.map((item) => (
+              <div key={item.label} className="flex items-center justify-between border-b border-slate-100 pb-2.5 text-xs last:border-0 last:pb-0 dark:border-slate-800">
+                <span className="text-slate-500 dark:text-slate-400">{item.label}</span>
+                <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200">
+                  <span className={`h-1.5 w-1.5 rounded-full ${['Active', 'Running', 'Normal', 'Closed', 'Online'].includes(item.status) ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                  {item.status}
+                </span>
+              </div>
+            ))}
+          </div>
+          <Link to="/assets" className="mt-4 inline-flex text-xs font-semibold text-cyan-700 hover:text-cyan-600 dark:text-cyan-300">View asset registry →</Link>
+        </section>
       </div>
 
-      {/* ── Row 1: Battery Health + KPI Strip ─────────────────────────── */}
-      <div className="surface-card grid grid-cols-1 items-center gap-6 rounded-2xl border bg-white p-5 dark:bg-slate-900 lg:grid-cols-[240px_minmax(0,1fr)] lg:p-6">
-        <div className="flex flex-col items-center">
-          <div className="self-start">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Battery Health</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{site.id} — LFP Chemistry</p>
-          </div>
-          <SohRing soh={site.soh} />
-          </div>
-        <div className="grid grid-cols-1 gap-5 border-t border-slate-100 pt-5 dark:border-slate-800 sm:grid-cols-3 lg:border-l lg:border-t-0 lg:py-2 lg:pl-7">
-          <MetricBar
-            label="State of Charge"
-            valueText={`${site.soc}%`}
-            percentage={site.soc}
-            color="cyan"
-            minText="0%"
-            maxText="100%"
-          />
-          <MetricBar
-            label="Avg Cell Temp"
-            valueText={`${site.temperature} °C`}
-            percentage={((site.temperature - 20) / 30) * 100}
-            color={site.temperature > 35 ? 'rose' : site.temperature > 30 ? 'amber' : 'emerald'}
-            minText="20°C"
-            maxText="50°C"
-          />
-          <MetricBar
-            label="DC Bus Voltage"
-            valueText={`${site.dcVoltage} V`}
-            percentage={((site.dcVoltage - 1200) / 100) * 100}
-            color="blue"
-            minText="1200 V"
-            maxText="1300 V"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
         {[
-          { label: 'Round-Trip Efficiency', value: `${site.roundTripEfficiency}%`, sub: 'Measured RTE', icon: Activity },
-          { label: 'Energy Today', value: `${site.energyTodayMWh} MWh`, sub: 'Charged + Discharged', icon: Zap },
+          { label: 'Round-trip efficiency', value: `${site.roundTripEfficiency}%`, sub: 'Measured RTE', icon: Activity },
+          { label: 'Energy moved today', value: `${site.energyTodayMWh} MWh`, sub: 'Charged + discharged', icon: Zap },
           { label: 'Availability', value: `${site.availability}%`, sub: '30-day rolling', icon: Shield },
-          { label: 'Cycles (Total)', value: site.cycles.toLocaleString(), sub: 'Full charge cycles', icon: RefreshCw },
-          { label: 'Health Index', value: `${site.healthIndex}`, sub: 'Composite score / 100', icon: Activity },
-          { label: 'RUL Estimate', value: `${site.rul} yrs`, sub: 'To EOL (SoH 70%)', icon: Clock },
+          { label: 'Total cycles', value: site.cycles.toLocaleString(), sub: 'Equivalent full cycles', icon: RefreshCw },
         ].map(({ label, value, sub, icon: Icon }) => (
-          <div key={label} className="surface-card group flex min-h-[132px] flex-col gap-3 rounded-2xl border bg-white p-4 dark:bg-slate-900 hover:-translate-y-0.5">
+          <div key={label} className="surface-card group flex min-h-[118px] flex-col gap-3 rounded-2xl border p-4 hover:-translate-y-0.5">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-50 text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300">
                 <Icon className="w-4 h-4" />
               </span>
               <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</span>
             </div>
+
+            <section className="surface-card rounded-2xl border p-5 lg:p-6">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-600 dark:text-cyan-400">Battery hierarchy</p>
+                  <h2 className="mt-1 text-sm font-bold text-slate-900 dark:text-white">Container operating summary</h2>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Container-level SOC, maximum temperature and voltage spread for operator triage.</p>
+                </div>
+                <Link to={`/site/${site.id}/battery`} className="text-xs font-semibold text-cyan-700 hover:text-cyan-600 dark:text-cyan-300">Inspect cells →</Link>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[620px] text-left text-xs">
+                  <thead className="border-b border-slate-200 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:border-slate-800 dark:text-slate-500">
+                    <tr>
+                      <th className="pb-3 pr-4">Container</th>
+                      <th className="pb-3 pr-4">Racks</th>
+                      <th className="pb-3 pr-4">SOC</th>
+                      <th className="pb-3 pr-4">Max temperature</th>
+                      <th className="pb-3">Voltage spread</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {site.pack.containerSummary.map((container) => (
+                      <tr key={container.id}>
+                        <td className="py-3 pr-4 font-semibold text-slate-800 dark:text-slate-200">{container.name}</td>
+                        <td className="py-3 pr-4 text-slate-500 dark:text-slate-400">{container.rackCount}</td>
+                        <td className="py-3 pr-4 font-semibold tabular-nums text-slate-800 dark:text-slate-200">{container.soc}%</td>
+                        <td className={`py-3 pr-4 font-semibold tabular-nums ${container.maxTemperature > 45 ? 'text-rose-600 dark:text-rose-300' : 'text-slate-800 dark:text-slate-200'}`}>{container.maxTemperature} °C</td>
+                        <td className={`py-3 font-semibold tabular-nums ${container.voltageSpread > 0.1 ? 'text-amber-600 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'}`}>{container.voltageSpread} V</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
             <span className="text-2xl font-bold leading-none text-slate-900 dark:text-white tabular-nums tracking-tight">
               {value}
             </span>
@@ -314,42 +338,38 @@ export default function SiteDashboard() {
         </ResponsiveContainer>
       </ChartCard>
 
-      {/* ── Row 3: RUL + Cell Heatmap ──────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartCard
-          title="Remaining Useful Life (RUL) Forecast"
-          subtitle="ML model projection with 95% confidence interval to EOL (SoH 70%)"
-          badgeText="Predictive"
-        >
-          <div style={{ minHeight: 360 }}>
-            <RulChart series={site.rulSeries} rulYears={site.rul} />
-          </div>
-        </ChartCard>
+      {/* Detailed predictive analysis is available from Asset Health. */}
 
-        <div className="surface-card p-6 rounded-2xl bg-white dark:bg-slate-900 border">
-          <div className="mb-4">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Cell Health Heatmap</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Container → Rack → Module → Cell. Colour by current telemetry value.
-            </p>
-          </div>
-          <CellHeatmap containers={site.pack.containers} />
-        </div>
-      </div>
-
-      {/* ── Row 4: Anomaly Predictions ────────────────────────────────── */}
-      <div className="surface-card p-6 rounded-2xl bg-white dark:bg-slate-900 border space-y-4">
-        <div>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white">Predictive Anomaly Alerts</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            ML model–flagged issues with predicted time-to-fault and recommended actions.
+      <section className="surface-card rounded-2xl border p-5 lg:p-6">
+        <div className="mb-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-600 dark:text-cyan-400">Dedicated operational views</p>
+          <h2 className="mt-1 text-sm font-bold text-slate-900 dark:text-white">Continue investigation</h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Detailed equipment, safety, alarm, predictive and maintenance workflows are available on their dedicated pages.
           </p>
         </div>
-        <AnomalyList anomalies={site.predictedAnomalies} />
-      </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { title: 'Power conversion', detail: 'PCS values, efficiency and faults.', path: `/site/${site.id}/pcs` },
+            { title: 'Safety & hazards', detail: 'Thermal, fire and environmental risks.', path: '/hazards' },
+            { title: 'Alarm management', detail: 'Acknowledge and action site alarms.', path: '/alarms' },
+            { title: 'Asset health', detail: 'RUL, anomalies and recommendations.', path: '/asset-health' },
+            { title: 'Maintenance & CMMS', detail: 'Work orders, permits and execution.', path: '/maintenance' },
+            { title: 'Historical trends', detail: 'Long-term site telemetry analysis.', path: '/history' },
+          ].map((view) => (
+            <Link key={view.title} to={view.path} className="group rounded-xl border border-slate-200 bg-slate-50/70 p-4 transition-colors hover:border-cyan-500/30 hover:bg-cyan-500/5 dark:border-slate-800 dark:bg-slate-900/40 dark:hover:bg-cyan-400/5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{view.title}</span>
+                <ArrowUpRight className="h-4 w-4 text-slate-400 transition-colors group-hover:text-cyan-500" />
+              </div>
+              <p className="mt-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400">{view.detail}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-      {/* ── Row 5: Battery Performance (RTE actual vs predicted) ─────── */}
-      <ChartCard
+      {/* Historical performance analysis is available from Performance Analytics. */}
+      {false && <ChartCard
         title="Battery Performance — RTE Actual vs Predicted"
         subtitle="Round-trip efficiency over last 6 months. Deviation from prediction indicates accelerated degradation."
       >
@@ -382,14 +402,14 @@ export default function SiteDashboard() {
             />
           </ComposedChart>
         </ResponsiveContainer>
-      </ChartCard>
+      </ChartCard>}
 
       {/* ── Row 6: Equipment & Safety ─────────────────────────────────── */}
-      <div className="surface-card p-6 rounded-2xl bg-white dark:bg-slate-900 border space-y-4">
+      {false && <div className="surface-card p-6 rounded-2xl bg-white dark:bg-slate-900 border space-y-4">
         <div>
           <h2 className="text-sm font-bold text-slate-900 dark:text-white">Equipment & Safety</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            PCS, transformer, switchgear, HVAC, fire suppression, UPS, energy meter, environment.
+            PCS, transformer, switchgear, protection, HVAC, fire, environment, gateway and auxiliary systems.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -438,8 +458,11 @@ export default function SiteDashboard() {
             icon={AlertTriangle}
             label={eq.fireSuppression.label}
             status={eq.fireSuppression.status}
+            warn={eq.fireSuppression.status === 'Trouble'}
             lines={[
               { label: 'Last Test', value: eq.fireSuppression.lastTestDate },
+              { label: 'Smoke Detection', value: eq.environment.smokeDetector },
+              { label: 'Gas Detection', value: eq.environment.gasDetector },
             ]}
           />
           <EquipmentCard
@@ -467,25 +490,57 @@ export default function SiteDashboard() {
               { label: 'Humidity', value: `${eq.environment.humidity}%` },
               { label: 'Door', value: eq.environment.doorStatus },
               { label: 'Flood Sensor', value: eq.environment.floodSensor },
+              { label: 'Security Sensors', value: eq.environment.securitySensors },
+            ]}
+          />
+          <EquipmentCard
+            icon={Wifi}
+            label="Edge Gateway"
+            status={site.commsStatus === 'Online' ? 'Online' : 'Buffered'}
+            lines={[
+              { label: 'Last telemetry', value: site.lastUpdated },
+              { label: 'Data state', value: site.commsStatus === 'Online' ? 'Synchronized' : 'Buffering locally' },
             ]}
           />
         </div>
-      </div>
+      </div>}
 
+      {false && <>
       {/* ── Row 7: Site Alarms ────────────────────────────────────────── */}
       <ChartCard
         title="Site Alarms"
         subtitle={`Active and recent alarms for ${site.id}`}
         badgeText="Live"
       >
-        {siteAlarms.length > 0 ? (
-          <AlarmList alarms={siteAlarms} />
+        {visibleSiteAlarms.length > 0 ? (
+          <AlarmList
+            alarms={visibleSiteAlarms}
+            onAcknowledge={acknowledgeAlarm}
+            onCreateWorkOrder={createWorkOrderFromAlarm}
+          />
         ) : (
           <p className="text-sm text-slate-500 dark:text-slate-400 py-4 text-center">
             No active alarms for this site.
           </p>
         )}
       </ChartCard>
+
+      {events.filter((event) => event.siteId === site.id).length > 0 && (
+        <div className="surface-card rounded-2xl border bg-white p-6 dark:bg-slate-900">
+          <div className="mb-4">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Recent Operator Events</h2>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Actions recorded during this demo session.</p>
+          </div>
+          <div className="space-y-2">
+            {events.filter((event) => event.siteId === site.id).slice(0, 5).map((event) => (
+              <div key={event.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-slate-800 dark:bg-slate-800/50">
+                <span className="font-medium text-slate-700 dark:text-slate-200">{event.type}</span>
+                <span className="font-mono text-slate-400 dark:text-slate-500">{new Date(event.timestamp).toLocaleTimeString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Row 8: Maintenance / Work Orders ─────────────────────────── */}
       <div className="surface-card p-6 rounded-2xl bg-white dark:bg-slate-900 border space-y-4">
@@ -497,7 +552,7 @@ export default function SiteDashboard() {
             </p>
           </div>
           <span className="text-xs font-semibold px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-            {site.workOrders.length} Work Orders
+            {visibleWorkOrders.length} Work Orders
           </span>
         </div>
         <div className="overflow-x-auto">
@@ -512,7 +567,7 @@ export default function SiteDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {site.workOrders.map((wo) => (
+              {visibleWorkOrders.map((wo) => (
                 <tr key={wo.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                   <td className="py-3 pr-4 font-mono font-semibold text-slate-700 dark:text-slate-200">{wo.id}</td>
                   <td className="py-3 pr-4 text-slate-600 dark:text-slate-300">{wo.type}</td>
@@ -528,6 +583,7 @@ export default function SiteDashboard() {
           </table>
         </div>
       </div>
+      </>}
 
     </div>
   );

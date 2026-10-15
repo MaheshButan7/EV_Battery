@@ -70,22 +70,22 @@ export default function Login() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 text-xs font-semibold mb-7">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              BESS Fleet Intelligence
+              BESS Site Intelligence
             </div>
             <h1 className="text-4xl xl:text-5xl font-black text-white leading-[1.08] tracking-tight max-w-lg">
-              See the fleet.<br />
+              See every site.<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
                 Stay ahead.
               </span>
             </h1>
             <p className="text-slate-300/80 text-base mt-6 leading-7 max-w-md">
-              Monitor site health, energy flows, and emerging risks across your storage fleet from one clear operational view.
+              Monitor site health, energy flows, and emerging risks across your storage portfolio from one clear operational view.
             </p>
           </div>
         </div>
 
         <p className="text-slate-600 text-xs relative z-10">
-          © 2026 Baellchen. All site numbers are illustrative demo data only.
+          © 2026 BESS Command Center. All site numbers are illustrative demo data only.
         </p>
       </div>
 

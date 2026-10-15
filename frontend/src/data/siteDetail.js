@@ -15,20 +15,20 @@ function lerp(a, b, t) {
 }
 
 /**
- * Generate 2 containers × 4 racks × 8 modules × 12 cells for any site.
- * Anomalous cells for BESS-103 are overridden after generation.
+ * Generate 2 containers × 5 racks × 10 modules × 50 cells for any site.
+ * This is 5,000 cells per site and 20,000 cells across the four-site demo fleet.
  */
-export function generatePackData(siteId = 'BESS-103') {
+export function generatePackData(siteId = 'BESS-JODHUR') {
   const rng = seededRng(siteId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0));
   const containers = [];
 
   for (let cont = 1; cont <= 2; cont++) {
     const racks = [];
-    for (let rack = 1; rack <= 4; rack++) {
+    for (let rack = 1; rack <= 5; rack++) {
       const modules = [];
-      for (let mod = 1; mod <= 8; mod++) {
+      for (let mod = 1; mod <= 10; mod++) {
         const cells = [];
-        for (let c = 1; c <= 12; c++) {
+        for (let c = 1; c <= 50; c++) {
           const r = rng();
           cells.push({
             id: `C${cont}-R${rack}-M${mod}-C${String(c).padStart(2, '0')}`,
@@ -50,36 +50,36 @@ export function generatePackData(siteId = 'BESS-103') {
     containers.push({ id: `Cont${cont}`, name: `Container ${cont}`, racks });
   }
 
-  // Override 3 anomaly cells for BESS-103
-  if (siteId === 'BESS-103') {
-    // Anomaly 1: Container 1 / Rack 2 / Module 4 / Cell 07 — voltage deviation
+  // Jodhpur is the primary safety storyline for the client demo.
+  if (siteId === 'BESS-JODHUR') {
+    // Anomaly 1: Container 1 / Rack 2 / Module 4 / Cell 07 — hot cell
     const cell1 = containers[0].racks[1].modules[3].cells[6];
-    cell1.voltage = 3.134;
-    cell1.temperature = 30.8;
+    cell1.voltage = 3.284;
+    cell1.temperature = 51;
     cell1.internalResistance = 0.268;
     cell1.isAnomalous = true;
     cell1.anomaly = {
       location: 'Cont 1 / R2 / M4 / Cell 07',
-      issue: 'Voltage Deviation Trend',
+      issue: 'Thermal Runaway Risk',
       daysRemaining: 14,
       priority: 'Major',
       modelConfidence: '93.1%',
-      action: 'Inspect cell balancing circuit; schedule module inspection.',
+      action: 'Isolate rack and inspect thermal propagation controls.',
     };
 
-    // Anomaly 2: Container 1 / Rack 3 / Module 2 / Cell 11 — rising IR
+    // Anomaly 2: Container 1 / Rack 3 / Module 2 / Cell 11 — low voltage
     const cell2 = containers[0].racks[2].modules[1].cells[10];
-    cell2.voltage = 3.218;
+    cell2.voltage = 3.140;
     cell2.temperature = 33.2;
     cell2.internalResistance = 0.312;
     cell2.isAnomalous = true;
     cell2.anomaly = {
       location: 'Cont 1 / R3 / M2 / Cell 11',
-      issue: 'Rising Internal Resistance',
+      issue: 'Low Module Voltage',
       daysRemaining: 38,
       priority: 'Minor',
       modelConfidence: '91.4%',
-      action: 'Schedule thermal scan; torque-check bus connectors.',
+      action: 'Inspect balancing circuit and schedule module inspection.',
     };
   }
 
@@ -90,19 +90,19 @@ export function generatePackData(siteId = 'BESS-103') {
 export const bess103SystemAnomalies = [
   {
     location: 'Cont 1 / R2 / M4 / Cell 07',
-    issue: 'Voltage Deviation Trend',
+    issue: 'Thermal Runaway Risk',
     daysRemaining: 14,
     priority: 'Major',
     modelConfidence: '93.1%',
-    action: 'Inspect cell balancing circuit; schedule module inspection.',
+    action: 'Isolate rack and inspect thermal propagation controls.',
   },
   {
     location: 'Cont 1 / R3 / M2 / Cell 11',
-    issue: 'Rising Internal Resistance',
+    issue: 'Low Module Voltage',
     daysRemaining: 38,
     priority: 'Minor',
     modelConfidence: '91.4%',
-    action: 'Schedule thermal scan; torque-check bus connectors.',
+    action: 'Inspect balancing circuit and schedule module inspection.',
   },
   {
     location: 'Container 2 / HVAC Unit 2',

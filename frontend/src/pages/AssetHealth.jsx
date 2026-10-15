@@ -1,0 +1,31 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import PageFrame from '../components/ui/PageFrame';
+import { useDemoData } from '../hooks/useDemoData';
+import { Activity, ArrowRight, BrainCircuit, Thermometer } from 'lucide-react';
+
+export default function AssetHealth() {
+  const { createWorkOrderFromAlarm, alarms, selectedSite } = useDemoData();
+  const accessibleSites = selectedSite ? [selectedSite] : [];
+  const risks = accessibleSites.map((site) => ({
+    ...site,
+    issue: site.id === 'BESS-JODHUR' ? 'Thermal runaway risk' : site.id === 'BESS-RAIPUR' ? 'Capacity fade and HVAC fault' : site.id === 'BESS-CHENNAI' ? 'Gateway communication loss' : 'PCS heat derating',
+  })).sort((a, b) => a.healthIndex - b.healthIndex);
+  return (
+    <PageFrame title="Asset Health & Predictive Maintenance" description="Health scores, degradation signals and explainable recommendations across all BESS sites.">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {[['Average site health', '92.5', Activity], ['Assets at risk', '2', Thermometer], ['Predictions simulated', '17', BrainCircuit]].map(([label, value, Icon]) => <div key={label} className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><Icon className="h-5 w-5 text-cyan-500" /><p className="mt-3 text-xs font-semibold uppercase text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">{value}</p></div>)}
+      </div>
+      <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
+        <h2 className="text-base font-bold text-slate-900 dark:text-white">Assets requiring attention</h2>
+        <div className="mt-4 space-y-3">
+          {risks.map((site) => {
+            const sourceAlarm = alarms.find((alarm) => alarm.siteId === site.id);
+            return <div key={site.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800 md:flex-row md:items-center"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><Link to={`/site/${site.id}`} className="text-sm font-bold text-cyan-600 dark:text-cyan-400">{site.name}</Link><span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold dark:bg-slate-800">{site.healthIndex}/100 health</span></div><p className="mt-1 text-xs text-slate-500">{site.issue}</p><div className="mt-3 h-2 max-w-md rounded-full bg-slate-100 dark:bg-slate-800"><div className={`h-2 rounded-full ${site.healthIndex < 85 ? 'bg-rose-500' : site.healthIndex < 92 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${site.healthIndex}%` }} /></div></div><div className="flex items-center gap-2"><span className="text-right text-[10px] text-slate-500">Confidence<br /><strong className="text-slate-800 dark:text-slate-200">87–94%</strong></span>{sourceAlarm && <button type="button" onClick={() => createWorkOrderFromAlarm(sourceAlarm.id)} className="rounded-lg bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-cyan-700 dark:text-cyan-300">{sourceAlarm.workOrderId || 'Create work order'}</button>}<ArrowRight className="h-4 w-4 text-slate-400" /></div></div>;
+          })}
+        </div>
+      </div>
+      <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-200"><strong>Simulated model card:</strong> predictions use seeded synthetic telemetry and rules for demonstration. They are not validated production model results.</div>
+    </PageFrame>
+  );
+}

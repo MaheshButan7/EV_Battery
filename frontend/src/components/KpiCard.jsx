@@ -8,9 +8,6 @@ const iconMap = {
   avgFleetSoh: HeartPulse,
   activeAlarms: AlertTriangle,
   fleetAvailability: Shield,
-  // legacy fallbacks
-  totalVehicles: Building2,
-  activeAlerts: AlertTriangle,
 };
 
 const colorMap = {
@@ -19,30 +16,27 @@ const colorMap = {
   avgFleetSoh: { bg: 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400', glow: 'border-emerald-500/20' },
   activeAlarms: { bg: 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400', glow: 'border-rose-500/20' },
   fleetAvailability: { bg: 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400', glow: 'border-indigo-500/20' },
-  // legacy
-  totalVehicles: { bg: 'bg-blue-500/10 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400', glow: 'border-blue-500/20' },
-  activeAlerts: { bg: 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400', glow: 'border-rose-500/20' },
 };
 
 export default function KpiCard({ type, label, value, delta, deltaType, suffix = '' }) {
-  const Icon = iconMap[type] || Truck;
-  const style = colorMap[type] || colorMap.totalVehicles;
+  const Icon = iconMap[type] || Building2;
+  const style = colorMap[type] || colorMap.totalSites;
 
   return (
-    <div className="surface-card relative p-5 rounded-2xl bg-white dark:bg-slate-900 border flex flex-col justify-between overflow-hidden group hover:-translate-y-0.5">
+    <div className="surface-card group relative flex flex-col justify-between overflow-hidden border p-5 hover:-translate-y-0.5">
       {/* Top Header Row */}
       <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 tracking-wide uppercase">
+        <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-500 dark:text-slate-400">
           {label}
         </span>
         <div className={`p-2.5 rounded-xl ${style.bg} transition-transform group-hover:scale-105 duration-200`}>
-          <Icon className="w-5 h-5" />
+          <Icon className="h-[18px] w-[18px]" />
         </div>
       </div>
 
       {/* Main Metric Value */}
       <div className="flex items-baseline gap-1 my-1">
-        <span className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900 dark:text-white tabular-nums">
+        <span className="text-[1.8rem] font-bold tracking-[-0.035em] text-slate-950 dark:text-white tabular-nums">
           {value}
         </span>
         {suffix && (

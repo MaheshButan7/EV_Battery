@@ -28,7 +28,7 @@ export async function getSites() {
 }
 
 function makeSitePowerProfile(site) {
-  if (site.id === 'BESS-103') return bess103PowerProfile;
+  if (site.id === 'BESS-JODHUR') return bess103PowerProfile;
 
   const usableCapacityMWh = site.capacityMWh * (site.soh / 100);
   const oneWayEfficiency = Math.sqrt(site.roundTripEfficiency / 100);
@@ -70,17 +70,49 @@ function makeSitePowerProfile(site) {
 export async function getSite(id) {
   const site = mockSites.find((s) => s.id === id) || mockSites[0];
   const containers = generatePackData(site.id);
+  const cells = containers.flatMap((container) => container.racks.flatMap((rack) => rack.modules.flatMap((module) => module.cells)));
+  const maxCellTemperature = Math.max(...cells.map((cell) => cell.temperature));
+  const voltageValues = cells.map((cell) => cell.voltage);
+  const voltageImbalance = +(Math.max(...voltageValues) - Math.min(...voltageValues)).toFixed(3);
+  const containerSummary = containers.map((container) => {
+    const containerCells = container.racks.flatMap((rack) => rack.modules.flatMap((module) => module.cells));
+    return {
+      id: container.id,
+      name: container.name,
+      soc: +(site.soc + (container.id === 'Cont1' ? 0.8 : -0.6)).toFixed(1),
+      maxTemperature: +Math.max(...containerCells.map((cell) => cell.temperature)).toFixed(1),
+      voltageSpread: +(Math.max(...containerCells.map((cell) => cell.voltage)) - Math.min(...containerCells.map((cell) => cell.voltage))).toFixed(3),
+      rackCount: container.racks.length,
+    };
+  });
+  const equipment = {
+    ...bess103Equipment,
+    fireSuppression: {
+      ...bess103Equipment.fireSuppression,
+      status: site.id === 'BESS-JODHUR' ? 'Trouble' : bess103Equipment.fireSuppression.status,
+    },
+    environment: {
+      ...bess103Equipment.environment,
+      ambientTempC: site.temperature,
+      smokeDetector: site.id === 'BESS-JODHUR' ? 'Normal' : 'Normal',
+      gasDetector: site.id === 'BESS-JODHUR' ? 'Normal' : 'Normal',
+      securitySensors: 'Normal',
+    },
+  };
 
   return Promise.resolve({
     ...site,
-    energyTodayMWh: site.id === 'BESS-103'
+    energyTodayMWh: site.id === 'BESS-JODHUR'
       ? bess103Equipment.energyMeter.todayChargedMWh + bess103Equipment.energyMeter.todayDischargedMWh
       : site.energyTodayMWh,
-    pack: { containers },
+    pack: { containers, containerSummary },
+    soeMWh: +(site.capacityMWh * (site.soc / 100) * (site.soh / 100)).toFixed(1),
+    maxCellTemperature: +maxCellTemperature.toFixed(1),
+    voltageImbalance,
     rulSeries: bess103RulSeries,
     performanceSeries: bess103PerformanceSeries,
     powerProfile: makeSitePowerProfile(site),
-    equipment: bess103Equipment,
+    equipment,
     workOrders: bess103WorkOrders,
     predictedAnomalies: bess103SystemAnomalies,
   });

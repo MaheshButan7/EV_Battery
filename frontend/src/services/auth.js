@@ -17,6 +17,7 @@ export const DEMO_CREDENTIALS = [
     password: 'Demo@123',
     name: 'Demo Admin',
     role: 'Administrator',
+    siteIds: ['BESS-PUNE', 'BESS-JODHUR', 'BESS-CHENNAI', 'BESS-RAIPUR'],
   },
 ];
 
@@ -27,7 +28,7 @@ export async function login(email, password) {
   if (!user) {
     throw new Error('Invalid email or password. Please try again.');
   }
-  const session = { email: user.email, name: user.name, role: user.role };
+  const session = { email: user.email, name: user.name, role: user.role, siteIds: user.siteIds };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
 }
