@@ -135,6 +135,45 @@ export function DemoDataProvider({ children }) {
     if (alarm) addEvent({ type: 'Alarm acknowledged', alarmId, siteId: alarm.siteId, actor: user });
   };
 
+  const updateAlarmState = (alarmId, state, details = {}, user = 'Demo Operator') => {
+    const alarm = alarms.find((item) => item.id === alarmId);
+    if (!alarm || alarm.state === state && !Object.keys(details).length) return;
+    setAlarms((current) => current.map((item) => (
+      item.id === alarmId
+        ? { ...item, ...details, state, updatedAt: new Date().toISOString(), updatedBy: user }
+        : item
+    )));
+    addEvent({ type: `Alarm ${state.toLowerCase()}`, alarmId, siteId: alarm.siteId, actor: user, ...details });
+  };
+
+  const shelveAlarm = (alarmId, durationMinutes = 60, user = 'Demo Operator') => updateAlarmState(
+    alarmId,
+    'Shelved',
+    { shelvedUntil: new Date(Date.now() + durationMinutes * 60 * 1000).toISOString(), shelvedForMinutes: durationMinutes },
+    user,
+  );
+
+  const suppressAlarm = (alarmId, reason = 'Demo suppression rule', user = 'Demo Operator') => updateAlarmState(
+    alarmId,
+    'Suppressed',
+    { suppressionReason: reason },
+    user,
+  );
+
+  const escalateAlarm = (alarmId, role = 'Maintenance Planner', user = 'Demo Operator') => updateAlarmState(
+    alarmId,
+    'Escalated',
+    { escalatedTo: role },
+    user,
+  );
+
+  const correlateAlarm = (alarmId, parentAlarmId, user = 'Demo Operator') => {
+    const alarm = alarms.find((item) => item.id === alarmId);
+    const parent = alarms.find((item) => item.id === parentAlarmId);
+    if (!alarm || !parent || alarmId === parentAlarmId) return;
+    updateAlarmState(alarmId, alarm.state, { correlatedTo: parentAlarmId }, user);
+  };
+
   const createWorkOrderFromAlarm = (alarmId, user = 'Demo Operator') => {
     const alarm = alarms.find((item) => item.id === alarmId);
     if (!alarm) return null;
@@ -165,6 +204,25 @@ export function DemoDataProvider({ children }) {
       item.id === alarmId ? { ...item, workOrderId: workOrder.id } : item
     )));
     addEvent({ type: 'Work order created', alarmId, workOrderId: workOrder.id, siteId: alarm.siteId, actor: user });
+    return workOrder;
+  };
+
+  const createManualWorkOrder = ({ siteId, assetId, description, priority = 'Major', type = 'Corrective' }, user = 'Demo Operator') => {
+    const workOrder = {
+      id: `WO-${String(Math.max(3000, ...workOrders.map((item) => Number(item.id.replace('WO-', '')) || 0)) + 1).padStart(4, '0')}`,
+      siteId,
+      assetId,
+      type,
+      description,
+      priority,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      assignee: 'Unassigned',
+      status: 'New',
+      checklist: defaultChecklist(),
+      reservedParts: [],
+    };
+    setWorkOrders((current) => [workOrder, ...current]);
+    addEvent({ type: 'Manual work order created', workOrderId: workOrder.id, siteId, assetId, actor: user });
     return workOrder;
   };
 
@@ -220,6 +278,14 @@ export function DemoDataProvider({ children }) {
     return true;
   };
 
+  const updatePartStock = (partId, delta, transaction = 'Stock adjusted', user = 'Demo Operator') => {
+    const part = parts.find((item) => item.id === partId);
+    if (!part || part.stock + delta < part.reserved) return false;
+    setParts((current) => current.map((item) => item.id === partId ? { ...item, stock: item.stock + delta } : item));
+    addEvent({ type: transaction, partId, partName: part.name, quantity: Math.abs(delta), actor: user });
+    return true;
+  };
+
   const value = useMemo(() => ({
     tick,
     lastUpdated,
@@ -237,13 +303,20 @@ export function DemoDataProvider({ children }) {
     permit,
     parts,
     acknowledgeAlarm,
+    updateAlarmState,
+    shelveAlarm,
+    suppressAlarm,
+    escalateAlarm,
+    correlateAlarm,
     createWorkOrderFromAlarm,
+    createManualWorkOrder,
     updateWorkOrderStatus,
     assignWorkOrder,
     updateWorkOrderChecklist,
     reservePartForWorkOrder,
     updatePermit,
     reservePart,
+    updatePartStock,
   }), [tick, lastUpdated, alarms, workOrders, events, permit, parts, accessibleSiteIds, selectedSiteId]);
 
   return <DemoDataContext.Provider value={value}>{children}</DemoDataContext.Provider>;

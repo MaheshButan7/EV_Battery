@@ -15,13 +15,24 @@ const trend = [
 ];
 
 export default function Analytics() {
-  const { selectedSite } = useDemoData();
-  const accessibleSites = selectedSite ? [selectedSite] : [];
-  const benchmark = accessibleSites.map((site) => ({ site: site.id.replace('BESS-', ''), availability: site.availability, soh: site.soh, rte: site.roundTripEfficiency }));
+  const { accessibleSites } = useDemoData();
+  const average = (key) => accessibleSites.length
+    ? accessibleSites.reduce((sum, site) => sum + site[key], 0) / accessibleSites.length
+    : 0;
+  const throughput = accessibleSites.reduce((sum, site) => sum + site.energyTodayMWh, 0);
+  const benchmark = [...accessibleSites]
+    .sort((a, b) => b.healthIndex - a.healthIndex)
+    .map((site) => ({ site: site.id.replace('BESS-', ''), availability: site.availability, soh: site.soh, rte: site.roundTripEfficiency }));
+  const metrics = [
+    ['Availability', `${average('availability').toFixed(1)}%`, Activity],
+    ['Round-trip efficiency', `${average('roundTripEfficiency').toFixed(1)}%`, Gauge],
+    ['Energy throughput · today', `${throughput.toFixed(1)} MWh`, Zap],
+    ['SOH degradation', `${(average('soh') - 100).toFixed(1)}%`, TrendingDown],
+  ];
   return (
     <PageFrame title="Analytics & Asset Performance" description="Site performance, benchmarking, degradation and operational trend analysis.">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[['Availability', '98.7%', Activity], ['Round-trip efficiency', '92.7%', Gauge], ['Energy throughput', '7,300 MWh', Zap], ['SOH degradation', '-0.4%', TrendingDown]].map(([label, value, Icon]) => <div key={label} className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><Icon className="h-5 w-5 text-cyan-500" /><p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{value}</p></div>)}
+        {metrics.map(([label, value, Icon]) => <div key={label} className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><Icon className="h-5 w-5 text-cyan-500" /><p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{value}</p></div>)}
       </div>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <ChartCard title="Site performance trend" subtitle="Availability and round-trip efficiency">

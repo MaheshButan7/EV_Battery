@@ -42,15 +42,6 @@ function tooltipStyle(isDark) {
   };
 }
 
-const kpiDefinitions = [
-  { label: 'Fleet availability', icon: ShieldCheck, format: (value) => `${value.toFixed(1)}%` },
-  { label: 'Energy delivered · MTD', icon: Zap, format: () => '7,300 MWh' },
-  { label: 'Round-trip efficiency', icon: Gauge, format: (value) => `${value.toFixed(1)}%` },
-  { label: 'Average fleet SoH', icon: Battery, format: (value) => `${value.toFixed(1)}%` },
-  { label: 'Critical active alarms', icon: AlertTriangle, format: (value) => value },
-  { label: 'Maintenance spend · YTD', icon: CircleDollarSign, format: () => '$184k' },
-];
-
 export default function Executive() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -67,11 +58,19 @@ export default function Executive() {
 
   const values = [
     average(accessibleSites.map((site) => site.availability)),
-    null,
+    accessibleSites.reduce((sum, site) => sum + site.energyTodayMWh, 0),
     average(accessibleSites.map((site) => site.roundTripEfficiency)),
     average(accessibleSites.map((site) => site.soh)),
     activeAlarms.filter((alarm) => alarm.priority === 'Critical').length,
-    null,
+    accessibleSites.reduce((sum, site) => sum + Math.round((100 - site.healthIndex) * 2.4), 0),
+  ];
+  const kpiDefinitions = [
+    { label: 'Fleet availability', icon: ShieldCheck, format: (value) => `${value.toFixed(1)}%` },
+    { label: 'Energy delivered · today', icon: Zap, format: (value) => `${value.toFixed(1)} MWh` },
+    { label: 'Round-trip efficiency', icon: Gauge, format: (value) => `${value.toFixed(1)}%` },
+    { label: 'Average fleet SoH', icon: Battery, format: (value) => `${value.toFixed(1)}%` },
+    { label: 'Critical active alarms', icon: AlertTriangle, format: (value) => value },
+    { label: 'Maintenance spend · estimate', icon: CircleDollarSign, format: (value) => `$${value}k` },
   ];
   const criticalCount = values[4];
   const atRiskSites = accessibleSites.filter((site) => site.riskLevel === 'High').length;

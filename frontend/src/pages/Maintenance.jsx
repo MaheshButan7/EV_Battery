@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CalendarDays, ClipboardCheck, ClipboardList, PackagePlus, Plus, Users } from 'lucide-react';
+import { AlertTriangle, CalendarDays, ClipboardCheck, ClipboardList, CircleDollarSign, PackagePlus, Plus, Target, Users } from 'lucide-react';
 import PageFrame from '../components/ui/PageFrame';
 import Button from '../components/ui/Button';
 import { useDemoData } from '../hooks/useDemoData';
@@ -47,6 +47,7 @@ export default function Maintenance() {
   const {
     selectedSite,
     workOrders,
+    createManualWorkOrder,
     updateWorkOrderStatus,
     assignWorkOrder,
     updateWorkOrderChecklist,
@@ -57,6 +58,8 @@ export default function Maintenance() {
   const [expandedId, setExpandedId] = useState(null);
   const [reserveChoices, setReserveChoices] = useState({});
   const [notice, setNotice] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newOrder, setNewOrder] = useState({ description: '', assetId: '', priority: 'Minor', type: 'Corrective' });
   const plans = useMemo(() => getPreventivePlans(selectedSite), [selectedSite]);
   const overdueCount = workOrders.filter(isOverdue).length;
   const openCount = workOrders.filter((item) => item.status !== 'Done').length;
@@ -64,6 +67,9 @@ export default function Maintenance() {
   const checklistCompletion = checklistItems.length
     ? Math.round((checklistItems.filter((item) => item.done).length / checklistItems.length) * 100)
     : 0;
+  const plannedCount = workOrders.filter((item) => ['Preventive', 'Predictive'].includes(item.type)).length;
+  const plannedRatio = workOrders.length ? Math.round((plannedCount / workOrders.length) * 100) : 0;
+  const estimatedCost = workOrders.reduce((sum, item) => sum + (item.status === 'Done' ? 4.2 : 2.1), 0);
   const visible = workOrders.filter((item) => {
     if (filter === 'All') return true;
     if (filter === 'Overdue') return isOverdue(item);
@@ -95,10 +101,34 @@ export default function Maintenance() {
           ['Overdue', overdueCount, 'Past due and still open'],
           ['Preventive plans', plans.length, 'Recurring schedules'],
           ['Checklist completion', `${checklistCompletion}%`, `${checklistItems.filter((item) => item.done).length} of ${checklistItems.length} inspection steps`],
+          ['Planned work', `${plannedRatio}%`, `${plannedCount} of ${workOrders.length} orders`],
+          ['Estimated cost', `$${estimatedCost.toFixed(1)}k`, 'Synthetic labour and materials estimate'],
         ].map(([label, value, detail], index) => {
-          const Icon = [ClipboardList, AlertTriangle, CalendarDays, ClipboardCheck][index];
+          const Icon = [ClipboardList, AlertTriangle, CalendarDays, ClipboardCheck, Target, CircleDollarSign][index];
           return <div key={label} className="surface-card rounded-2xl border bg-white p-4 dark:bg-slate-900"><div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</p><Icon className={`h-4 w-4 ${index === 1 && overdueCount ? 'text-rose-500' : 'text-cyan-500'}`} /></div><p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{value}</p><p className="mt-1 text-[10px] text-slate-500">{detail}</p></div>;
         })}
+      </section>
+
+      <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><h2 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white"><Plus className="h-4 w-4 text-cyan-500" />Create work order</h2><p className="mt-1 text-xs text-slate-500">Create a manual corrective, preventive, predictive or emergency task.</p></div>
+          <Button size="sm" variant={createOpen ? 'secondary' : 'primary'} onClick={() => setCreateOpen((current) => !current)}>{createOpen ? 'Close form' : 'New work order'}</Button>
+        </div>
+        {createOpen && <form className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" onSubmit={(event) => {
+          event.preventDefault();
+          if (!newOrder.description.trim()) return;
+          const created = createManualWorkOrder({ siteId: selectedSite?.id, assetId: newOrder.assetId || `${selectedSite?.id}-BMS-01`, ...newOrder });
+          setNotice(`${created.id} created for ${selectedSite?.name || 'selected site'}.`);
+          setNewOrder({ description: '', assetId: '', priority: 'Minor', type: 'Corrective' });
+          setCreateOpen(false);
+        }}>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:col-span-2">Description<input required value={newOrder.description} onChange={(event) => setNewOrder((current) => ({ ...current, description: event.target.value }))} placeholder="Describe the maintenance task" className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Asset ID<input value={newOrder.assetId} onChange={(event) => setNewOrder((current) => ({ ...current, assetId: event.target.value }))} placeholder="Optional asset ID" className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Type<select value={newOrder.type} onChange={(event) => setNewOrder((current) => ({ ...current, type: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700"><option>Preventive</option><option>Predictive</option><option>Corrective</option><option>Emergency</option><option>Condition-based</option></select></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Priority<select value={newOrder.priority} onChange={(event) => setNewOrder((current) => ({ ...current, priority: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700"><option>Critical</option><option>Major</option><option>Minor</option></select></label>
+          <Button type="submit" size="sm" variant="primary">Create</Button>
+        </form>}
+        {notice && <p role="status" className="mt-3 text-xs text-cyan-700 dark:text-cyan-300">{notice}</p>}
       </section>
 
       <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Flame, Zap, Activity, AlertTriangle } from 'lucide-react';
 import { formatVoltage, formatTemperature, formatResistance } from '../utils/formatters';
+import { useDemoData } from '../hooks/useDemoData';
 
-export default function CellHeatmap({ containers = [] }) {
+export default function CellHeatmap({ containers = [], siteId }) {
   const [selectedContainer, setSelectedContainer] = useState(0);
   const [selectedRack, setSelectedRack] = useState(0);
   const [metric, setMetric] = useState('temperature');
   const [hoveredCell, setHoveredCell] = useState(null);
+  const [selectedCell, setSelectedCell] = useState(null);
+  const { createManualWorkOrder } = useDemoData();
 
   const container = containers[selectedContainer];
   const rack = container?.racks[selectedRack];
@@ -123,7 +126,7 @@ export default function CellHeatmap({ containers = [] }) {
       </div>
 
       {/* Hover strip */}
-      <div className="min-h-[52px] px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center text-xs">
+      <div className="sticky top-0 z-20 min-h-[52px] px-4 py-2.5 rounded-xl border border-cyan-500/25 bg-slate-100/95 text-xs shadow-md backdrop-blur-sm dark:border-cyan-400/25 dark:bg-slate-800/95 flex items-center">
         {hoveredCell ? (
           <div className="flex flex-col gap-1 w-full">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -162,6 +165,7 @@ export default function CellHeatmap({ containers = [] }) {
                   key={cell.id}
                   onMouseEnter={() => setHoveredCell(cell)}
                   onMouseLeave={() => setHoveredCell(null)}
+                  onClick={() => setSelectedCell({ ...cell, containerName: container.name, rackName: rack.name, moduleName: module.name })}
                   type="button"
                   className={`relative h-9 rounded-lg font-mono text-[10px] font-bold flex flex-col items-center justify-center transition-transform hover:scale-105 ${getCellColor(cell)}`}
                   title={`${cell.id} | V: ${cell.voltage.toFixed(3)} V | T: ${cell.temperature.toFixed(1)} °C | IR: ${cell.internalResistance.toFixed(3)} mΩ${cell.anomaly ? ` | ⚠ ${cell.anomaly.issue} in ${cell.anomaly.daysRemaining}d` : ''}`}
@@ -180,6 +184,19 @@ export default function CellHeatmap({ containers = [] }) {
           </div>
         ))}
       </div>
+      {selectedCell && (
+        <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900" role="dialog" aria-modal="true" aria-label={`Telemetry for ${selectedCell.id}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div><p className="text-[10px] font-bold uppercase tracking-wide text-cyan-600 dark:text-cyan-400">Cell telemetry</p><h3 className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{selectedCell.id}</h3><p className="mt-1 text-xs text-slate-500">{selectedCell.containerName} · {selectedCell.rackName} · {selectedCell.moduleName}</p></div>
+            <button type="button" onClick={() => setSelectedCell(null)} className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Close</button>
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            {[['Voltage', formatVoltage(selectedCell.voltage)], ['Temperature', formatTemperature(selectedCell.temperature)], ['Internal resistance', `${selectedCell.internalResistance.toFixed(3)} mΩ`], ['Health score', selectedCell.isAnomalous ? 'At risk' : 'Normal']].map(([label, value]) => <div key={label} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><p className="text-[10px] uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{value}</p></div>)}
+          </div>
+          {selectedCell.anomaly ? <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-200"><p className="font-bold">Simulated prediction · {selectedCell.anomaly.modelConfidence} confidence</p><p className="mt-1">{selectedCell.anomaly.issue} in approximately {selectedCell.anomaly.daysRemaining} days.</p><p className="mt-2">{selectedCell.anomaly.action}</p></div> : <div className="mt-4 rounded-xl bg-emerald-500/10 p-4 text-xs text-emerald-700 dark:text-emerald-300">No current anomaly detected for this cell.</div>}
+          <div className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-800"><h4 className="text-xs font-bold text-slate-900 dark:text-white">Investigation actions</h4><p className="mt-1 text-[11px] text-slate-500">Historical charts and alarm records are simulated for this demo.</p><button type="button" onClick={() => createManualWorkOrder({ siteId, assetId: selectedCell.id, description: selectedCell.anomaly?.issue || `Inspect ${selectedCell.id}`, priority: selectedCell.anomaly?.priority || 'Minor', type: selectedCell.anomaly ? 'Predictive' : 'Condition-based' })} className="mt-4 w-full rounded-lg bg-cyan-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-cyan-700">Create inspection work order</button></div>
+        </div>
+      )}
     </div>
   );
 }

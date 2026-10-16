@@ -31,7 +31,7 @@ export default function BatteryCells() {
             {site.soh}% SOH
           </span>
         </div>
-        <CellHeatmap containers={site.pack.containers} />
+        <CellHeatmap containers={site.pack.containers} siteId={site.id} />
       </div>
     </PageFrame>
   );

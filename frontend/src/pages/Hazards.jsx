@@ -4,8 +4,8 @@ import { AlertTriangle, Flame, Radio, ShieldAlert, Thermometer } from 'lucide-re
 import { useDemoData } from '../hooks/useDemoData';
 
 export default function Hazards() {
-  const { selectedSite } = useDemoData();
-  const sites = selectedSite ? [selectedSite] : [];
+  const { accessibleSites } = useDemoData();
+  const sites = accessibleSites;
 
   const hazards = sites.flatMap((site) => {
     const items = [];

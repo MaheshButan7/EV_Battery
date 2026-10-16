@@ -126,6 +126,8 @@ function filenameFor(name, extension) {
 export default function Reports() {
   const [selected, setSelected] = useState(reports[0]);
   const [notice, setNotice] = useState('');
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [schedule, setSchedule] = useState({ frequency: 'Weekly', time: '09:00', recipients: 'operations@demo.local', format: 'PDF' });
   const { selectedSite, alarms } = useDemoData();
   const activeAlarmCount = alarms.filter((alarm) => alarm.state === 'Active').length;
   const reportDate = new Date();
@@ -163,10 +165,20 @@ export default function Reports() {
           <div className="mt-8 flex flex-wrap gap-2">
             <Button variant="primary" icon={Download} onClick={() => exportReport('CSV')}>Export CSV</Button>
             <Button variant="secondary" icon={Download} onClick={() => exportReport('PDF')}>Export PDF</Button>
-            <Button variant="secondary" icon={Mail} onClick={() => setNotice('Report scheduling is a production integration and is not sent by this frontend demo.')}>Schedule</Button>
+            <Button variant="secondary" icon={Mail} onClick={() => setScheduleOpen((current) => !current)}>Schedule</Button>
             <Button variant="secondary" icon={Play} onClick={() => setNotice(`${selected} preview refreshed using synthetic demo data.`)}>Generate preview</Button>
           </div>
           {notice && <p role="status" className="mt-4 rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-800 dark:text-cyan-200">{notice}</p>}
+          {scheduleOpen && <form className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-800" onSubmit={(event) => { event.preventDefault(); setScheduleOpen(false); setNotice(`${selected} scheduled ${schedule.frequency.toLowerCase()} at ${schedule.time} for ${schedule.recipients} as ${schedule.format}.`); }}>
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white">Schedule synthetic report</h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Frequency<select value={schedule.frequency} onChange={(event) => setSchedule((current) => ({ ...current, frequency: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700"><option>Daily</option><option>Weekly</option><option>Monthly</option></select></label>
+              <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Time<input type="time" value={schedule.time} onChange={(event) => setSchedule((current) => ({ ...current, time: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+              <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:col-span-2">Recipients<input type="email" required multiple value={schedule.recipients} onChange={(event) => setSchedule((current) => ({ ...current, recipients: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+              <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Format<select value={schedule.format} onChange={(event) => setSchedule((current) => ({ ...current, format: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700"><option>PDF</option><option>CSV</option><option>Excel-compatible</option></select></label>
+            </div>
+            <Button className="mt-4" size="sm" variant="primary" type="submit">Save schedule</Button>
+          </form>}
         </div>
       </div>
     </PageFrame>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Activity, Pause, Play, Search } from 'lucide-react';
+import { Activity, Download, Pause, Play, Search } from 'lucide-react';
 import PageFrame from '../components/ui/PageFrame';
 import ChartCard from '../components/ChartCard';
 import Button from '../components/ui/Button';
@@ -85,6 +85,22 @@ function generateSeries({ site, signal, range, resolution }) {
       value = currentPower * 0.72 + dailyCycle * variation + noise * 0.8;
     }
 
+    function downloadSeries(series, siteName, signal, extension = 'csv') {
+      const header = ['Timestamp', 'Asset', 'Signal', 'Value', 'Unit'];
+      const rows = series.map((point) => [new Date(point.timestamp).toISOString(), siteName, signal.label, point.value, signal.unit]);
+      const body = [header, ...rows].map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\r\n');
+      const content = extension === 'xls'
+        ? `<table><thead><tr>${header.map((value) => `<th>${value}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((value) => `<td>${String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;')}</td>`).join('')}</tr>`).join('')}</tbody></table>`
+        : `\uFEFF${body}\r\n`;
+      const blob = new Blob([content], { type: extension === 'xls' ? 'application/vnd.ms-excel' : 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${siteName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${signal.shortLabel.toLowerCase()}-history.${extension}`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
     return {
       timestamp,
       time: formatTimestamp(timestamp, range),
@@ -149,6 +165,8 @@ export default function HistoricalTrends() {
     setIsPlaying(true);
   };
 
+  const exportSeries = (extension) => downloadSeries(visibleSeries, siteName, selectedSignal, extension);
+
   return (
     <PageFrame title="Historical Trends" description="Explore synthetic site telemetry over selectable time windows and sampling resolutions.">
       <div className="surface-card flex flex-wrap items-end gap-3 rounded-2xl border bg-white p-4 dark:bg-slate-900">
@@ -203,7 +221,11 @@ export default function HistoricalTrends() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-xs text-cyan-900 dark:text-cyan-200">
         <span className="flex items-center gap-2"><Activity className="h-4 w-4 shrink-0" />Synthetic demo telemetry. Range and resolution control the generated sample window and point count; displayed retention target is 3 years.</span>
-        <Button variant="primary" size="sm" icon={isPlaying ? Pause : Play} onClick={togglePlayback}>{isPlaying ? 'Pause playback' : playbackCount < selectedSeries.length ? 'Resume playback' : 'Play playback'}</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" icon={Download} onClick={() => exportSeries('csv')}>Export CSV</Button>
+          <Button variant="secondary" size="sm" icon={Download} onClick={() => exportSeries('xls')}>Export Excel-compatible</Button>
+          <Button variant="primary" size="sm" icon={isPlaying ? Pause : Play} onClick={togglePlayback}>{isPlaying ? 'Pause playback' : playbackCount < selectedSeries.length ? 'Resume playback' : 'Play playback'}</Button>
+        </div>
       </div>
     </PageFrame>
   );

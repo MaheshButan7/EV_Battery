@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
-import { AlertOctagon, Check, ClipboardPlus, History, Search } from 'lucide-react';
+import { AlertOctagon, Check, ClipboardPlus, History, Search, ShieldAlert, Timer, TrendingUp } from 'lucide-react';
 import PageFrame from '../components/ui/PageFrame';
 import { useDemoData } from '../hooks/useDemoData';
 import { getAlarmPriorityStyle } from '../utils/formatters';
@@ -9,14 +9,34 @@ import Button from '../components/ui/Button';
 
 export default function AlarmManagement() {
   const [searchParams] = useSearchParams();
-  const { alarms, events, acknowledgeAlarm, createWorkOrderFromAlarm } = useDemoData();
+  const {
+    alarms,
+    accessibleAlarms,
+    events,
+    acknowledgeAlarm,
+    createWorkOrderFromAlarm,
+    shelveAlarm,
+    suppressAlarm,
+    escalateAlarm,
+    correlateAlarm,
+  } = useDemoData();
   const [filter, setFilter] = useState('All');
   const [query, setQuery] = useState(() => searchParams.get('query') || '');
-  const visible = useMemo(() => alarms.filter((alarm) => {
+  const visible = useMemo(() => accessibleAlarms.filter((alarm) => {
     const matchesFilter = filter === 'All' || alarm.priority === filter || alarm.state === filter;
     const haystack = `${alarm.siteId} ${alarm.title} ${alarm.description}`.toLowerCase();
     return matchesFilter && haystack.includes(query.toLowerCase());
-  }), [alarms, filter, query]);
+  }), [accessibleAlarms, filter, query]);
+
+  const activeCount = accessibleAlarms.filter((alarm) => alarm.state === 'Active').length;
+  const acknowledgedCount = accessibleAlarms.filter((alarm) => alarm.state === 'Acknowledged').length;
+  const criticalCount = accessibleAlarms.filter((alarm) => alarm.priority === 'Critical').length;
+  const correlationParent = alarms.find((item) => item.id !== visible[0]?.id && item.siteId === visible[0]?.siteId);
+  const sourceCounts = accessibleAlarms.reduce((counts, alarm) => {
+    const source = alarm.equipment?.split('-')[0] || 'Unknown';
+    counts[source] = (counts[source] || 0) + 1;
+    return counts;
+  }, {});
 
   return (
     <PageFrame title="Alarm & Event Management" description="Prioritize, acknowledge and route operational alarms across all BESS sites.">
@@ -28,6 +48,22 @@ export default function AlarmManagement() {
           </button>
         ))}
       </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {[
+          ['Active alarms', activeCount, ShieldAlert],
+          ['Acknowledged', acknowledgedCount, Check],
+          ['Critical exposure', criticalCount, TrendingUp],
+        ].map(([label, value, Icon]) => <div key={label} className="surface-card flex items-center gap-3 rounded-xl border bg-white p-4 dark:bg-slate-900"><Icon className="h-5 w-5 text-cyan-500" /><div><p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</p><p className="text-xl font-bold text-slate-900 dark:text-white">{value}</p></div></div>)}
+      </div>
+      <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
+        <h2 className="text-sm font-bold text-slate-900 dark:text-white">Alarm analytics</h2>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60"><p className="text-[10px] uppercase text-slate-500">Acknowledgement rate</p><p className="mt-1 text-lg font-bold">{accessibleAlarms.length ? Math.round((acknowledgedCount / accessibleAlarms.length) * 100) : 0}%</p></div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60"><p className="text-[10px] uppercase text-slate-500">Active exposure</p><p className="mt-1 text-lg font-bold">{activeCount} alarms</p></div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60"><p className="text-[10px] uppercase text-slate-500">Top source</p><p className="mt-1 text-lg font-bold">{Object.entries(sourceCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—'}</p></div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60"><p className="text-[10px] uppercase text-slate-500">Correlated</p><p className="mt-1 text-lg font-bold">{accessibleAlarms.filter((alarm) => alarm.correlatedTo).length}</p></div>
+        </div>
+      </section>
       <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700">
@@ -57,6 +93,10 @@ export default function AlarmManagement() {
                 </div>
                 <div className="flex shrink-0 gap-2">
                   {alarm.state === 'Active' && <Button size="sm" variant="success" icon={Check} onClick={() => acknowledgeAlarm(alarm.id)}>Acknowledge</Button>}
+                  {alarm.state === 'Active' && <Button size="sm" variant="secondary" icon={Timer} onClick={() => shelveAlarm(alarm.id)}>Shelve 1h</Button>}
+                  {alarm.state === 'Active' && <Button size="sm" variant="secondary" icon={ShieldAlert} onClick={() => suppressAlarm(alarm.id)}>Suppress</Button>}
+                  {alarm.state !== 'Escalated' && <Button size="sm" variant="secondary" onClick={() => escalateAlarm(alarm.id)}>Escalate</Button>}
+                  {correlationParent && <Button size="sm" variant="ghost" onClick={() => correlateAlarm(alarm.id, correlationParent.id)}>Correlate</Button>}
                   <Button size="sm" variant="subtle" icon={ClipboardPlus} onClick={() => createWorkOrderFromAlarm(alarm.id)}>{alarm.workOrderId || 'Work order'}</Button>
                 </div>
               </div>
