@@ -106,7 +106,8 @@ export default function Overview() {
         <KpiCard type="fleetAvailability" label="Fleet availability" value={fleetAvailability.toFixed(1)} suffix="%" delta="Mean across accessible sites" deltaType={fleetAvailability >= 99 ? 'positive' : 'warning'} />
       </section>
 
-      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.75fr]" aria-label="Fleet status and operational attention">
+      <section className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1.25fr_0.75fr]" aria-label="Fleet status and operational attention">
+        <div className="space-y-6">
         <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900 lg:p-6">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -122,28 +123,76 @@ export default function Overview() {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[670px] text-xs">
-              <thead><tr className="border-b border-slate-200 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-800"><th className="pb-3">Site</th><th className="pb-3">Operating state</th><th className="pb-3">Communications</th><th className="pb-3">SoC / SoH</th><th className="pb-3">Alarms</th><th className="pb-3">Risk</th></tr></thead>
+            <table className="w-full min-w-[760px] table-fixed text-xs">
+              <caption className="sr-only">Operating, battery, communication, alarm, and risk status for each accessible site</caption>
+              <colgroup>
+                <col className="w-[24%]" /><col className="w-[17%]" /><col className="w-[18%]" />
+                <col className="w-[8%]" /><col className="w-[8%]" /><col className="w-[10%]" /><col className="w-[15%]" />
+              </colgroup>
+              <thead>
+                <tr className="border-b border-slate-200 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-800">
+                  <th scope="col" className="pb-3 pr-3 text-left">Site</th>
+                  <th scope="col" className="px-2 pb-3 text-left">Operating state</th>
+                  <th scope="col" className="px-2 pb-3 text-left">Communications</th>
+                  <th scope="col" className="px-2 pb-3 text-center">SoC</th>
+                  <th scope="col" className="px-2 pb-3 text-center">SoH</th>
+                  <th scope="col" className="px-2 pb-3 text-center">Alarms</th>
+                  <th scope="col" className="pl-2 pb-3 text-center">Risk</th>
+                </tr>
+              </thead>
               <tbody>
                 {siteRows.map((site) => (
-                  <tr key={site.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800/80">
-                    <td className="py-3.5"><SiteLink site={site} selectSite={selectSite} className="font-bold text-cyan-700 hover:text-cyan-900 dark:text-cyan-300">{site.name}</SiteLink><span className="mt-0.5 block text-[10px] text-slate-400">{site.location}</span></td>
-                    <td className="py-3.5"><StatusBadge status={site.status} /></td>
-                    <td className="py-3.5"><span className={`inline-flex items-center gap-1.5 ${site.commsStatus === 'Online' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}><Radio className="h-3.5 w-3.5" />{site.commsStatus}</span></td>
-                    <td className="py-3.5 tabular-nums">{site.soc}% <span className="text-slate-400">/</span> {site.soh}%</td>
-                    <td className="py-3.5">{site.activeAlarms > 0 ? <span className="inline-flex items-center gap-1 font-bold text-rose-600 dark:text-rose-400"><AlertCircle className="h-3.5 w-3.5" />{site.activeAlarms}</span> : <span className="text-slate-400">0</span>}</td>
-                    <td className="py-3.5"><RiskBadge risk={site.riskLevel} /></td>
+                  <tr key={site.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/70 dark:border-slate-800/80 dark:hover:bg-slate-800/30">
+                    <td className="py-4 pr-3 align-middle"><SiteLink site={site} selectSite={selectSite} className="font-bold leading-5 text-cyan-700 hover:text-cyan-900 dark:text-cyan-300">{site.name}</SiteLink><span className="mt-0.5 block text-[10px] text-slate-400">{site.location}</span></td>
+                    <td className="px-2 py-4 align-middle"><StatusBadge status={site.status} /></td>
+                    <td className="px-2 py-4 align-middle"><span className={`inline-flex items-center gap-1.5 whitespace-nowrap ${site.commsStatus === 'Online' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}><Radio className="h-3.5 w-3.5 shrink-0" />{site.commsStatus}</span></td>
+                    <td className="px-2 py-4 text-center align-middle font-semibold tabular-nums text-slate-700 dark:text-slate-200">{site.soc}%</td>
+                    <td className="px-2 py-4 text-center align-middle font-semibold tabular-nums text-slate-700 dark:text-slate-200">{site.soh}%</td>
+                    <td className="px-2 py-4 text-center align-middle">{site.activeAlarms > 0 ? <span className="inline-flex items-center justify-center gap-1 font-bold text-rose-600 dark:text-rose-400"><AlertCircle className="h-3.5 w-3.5" />{site.activeAlarms}</span> : <span className="text-slate-400">0</span>}</td>
+                    <td className="pl-2 py-4 text-center align-middle"><span className="inline-flex justify-center"><RiskBadge risk={site.riskLevel} /></span></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {attentionSites.length > 0 && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-3 text-xs">
-              <span className="flex items-center gap-2 text-slate-700 dark:text-slate-200"><AlertCircle className="h-4 w-4 text-amber-500" />{attentionSites.length} sites need operational review</span>
-              <SiteLink site={attentionSites[0]} selectSite={selectSite} className="inline-flex items-center gap-1 font-bold text-cyan-700 dark:text-cyan-300">Review {attentionSites[0].name}<ArrowRight className="h-3.5 w-3.5" /></SiteLink>
+        </div>
+
+        <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900 lg:p-6">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-slate-950 dark:text-white">Operational watchlist</h2>
+              <p className="mt-1 text-xs text-slate-500">Sites that need follow-up beyond routine monitoring.</p>
             </div>
+            <span className="rounded-full border border-amber-500/20 bg-amber-500/[0.06] px-2.5 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300">{attentionSites.length} to review</span>
+          </div>
+          {attentionSites.length ? (
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {attentionSites.slice(0, 4).map((site) => {
+                const reason = site.commsStatus !== 'Online'
+                  ? 'Communications offline'
+                  : site.criticalCount > 0
+                    ? `${site.criticalCount} critical ${site.criticalCount === 1 ? 'alarm' : 'alarms'}`
+                    : site.status === 'Fault'
+                      ? 'Fault operating state'
+                      : `${site.activeAlarms} active ${site.activeAlarms === 1 ? 'alarm' : 'alarms'}`;
+                return (
+                  <div key={site.id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                    <div className="flex min-w-0 items-start gap-2.5">
+                      <AlertCircle className={`mt-0.5 h-4 w-4 shrink-0 ${site.riskLevel === 'High' || site.status === 'Fault' ? 'text-rose-500' : 'text-amber-500'}`} />
+                      <div className="min-w-0">
+                        <SiteLink site={site} selectSite={selectSite} className="text-xs font-bold text-cyan-700 hover:text-cyan-900 dark:text-cyan-300">{site.name}</SiteLink>
+                        <p className="mt-1 text-[10px] text-slate-500">{reason} <span className="text-slate-300 dark:text-slate-600">·</span> {site.riskLevel} risk</p>
+                      </div>
+                    </div>
+                    <SiteLink site={site} selectSite={selectSite} className="shrink-0 text-[10px] font-semibold text-cyan-700 dark:text-cyan-300">Review site <ArrowRight className="inline h-3 w-3" /></SiteLink>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="rounded-xl bg-emerald-500/[0.06] p-3 text-xs text-emerald-700 dark:text-emerald-300">No sites currently need additional operational review.</p>
           )}
+        </div>
         </div>
 
         <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900 lg:p-6">

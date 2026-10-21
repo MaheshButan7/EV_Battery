@@ -7,11 +7,23 @@ import { useAuth } from './useAuth';
 const DemoDataContext = createContext(null);
 
 const initialParts = [
-  { id: 'SP-001', name: 'LFP cell module 280Ah', stock: 12, reserved: 2, minimum: 8, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
-  { id: 'SP-014', name: 'HVAC filter kit', stock: 6, reserved: 3, minimum: 10, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
-  { id: 'SP-015', name: 'HVAC filter kit', stock: 6, reserved: 3, minimum: 10, location: 'Raipur Store', siteId: 'BESS-RAIPUR' },
-  { id: 'SP-022', name: 'Fire panel sensor', stock: 18, reserved: 0, minimum: 5, location: 'Central Store', siteId: null },
-  { id: 'SP-031', name: 'DC fuse 1250V', stock: 24, reserved: 4, minimum: 12, location: 'Pune Store', siteId: 'BESS-PUNE' },
+  { id: 'SP-001', name: 'LFP cell module 280Ah', category: 'Battery', stock: 12, reserved: 2, minimum: 8, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
+  { id: 'SP-002', name: 'DC fuse 1250V', category: 'Electrical', stock: 8, reserved: 1, minimum: 12, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
+  { id: 'SP-003', name: 'Coolant circulation pump', category: 'HVAC', stock: 3, reserved: 1, minimum: 4, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
+  { id: 'SP-004', name: 'BMS voltage sensing board', category: 'Controls', stock: 10, reserved: 1, minimum: 4, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
+  { id: 'SP-014', name: 'HVAC filter kit', category: 'HVAC', stock: 6, reserved: 3, minimum: 10, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
+  { id: 'SP-015', name: 'HVAC filter kit', category: 'HVAC', stock: 6, reserved: 3, minimum: 10, location: 'Raipur Store', siteId: 'BESS-RAIPUR' },
+  { id: 'SP-016', name: 'HVAC blower motor', category: 'HVAC', stock: 4, reserved: 1, minimum: 4, location: 'Raipur Store', siteId: 'BESS-RAIPUR' },
+  { id: 'SP-017', name: 'Battery rack contactor', category: 'Electrical', stock: 9, reserved: 2, minimum: 6, location: 'Raipur Store', siteId: 'BESS-RAIPUR' },
+  { id: 'SP-031', name: 'DC fuse 1250V', category: 'Electrical', stock: 24, reserved: 4, minimum: 12, location: 'Pune Store', siteId: 'BESS-PUNE' },
+  { id: 'SP-032', name: 'HVAC filter kit', category: 'HVAC', stock: 7, reserved: 1, minimum: 8, location: 'Pune Store', siteId: 'BESS-PUNE' },
+  { id: 'SP-033', name: 'Smoke detector module', category: 'Safety', stock: 10, reserved: 0, minimum: 4, location: 'Pune Store', siteId: 'BESS-PUNE' },
+  { id: 'SP-041', name: 'Fiber gateway module', category: 'Communications', stock: 2, reserved: 0, minimum: 3, location: 'Chennai Store', siteId: 'BESS-CHENNAI' },
+  { id: 'SP-042', name: 'Coolant pump seal kit', category: 'HVAC', stock: 5, reserved: 1, minimum: 4, location: 'Chennai Store', siteId: 'BESS-CHENNAI' },
+  { id: 'SP-043', name: 'BMS communications card', category: 'Controls', stock: 7, reserved: 1, minimum: 5, location: 'Chennai Store', siteId: 'BESS-CHENNAI' },
+  { id: 'SP-022', name: 'Fire panel sensor', category: 'Safety', stock: 18, reserved: 0, minimum: 5, location: 'Central Store', siteId: null },
+  { id: 'SP-023', name: 'Fire system backup battery', category: 'Safety', stock: 11, reserved: 2, minimum: 6, location: 'Central Store', siteId: null },
+  { id: 'SP-024', name: 'Thermal sensor harness', category: 'Controls', stock: 3, reserved: 0, minimum: 4, location: 'Central Store', siteId: null },
 ];
 
 const defaultChecklist = (completed = 0) => [
@@ -274,7 +286,7 @@ export function DemoDataProvider({ children }) {
     setParts((current) => current.map((item) => (
       item.id === partId ? { ...item, reserved: item.reserved + 1 } : item
     )));
-    addEvent({ type: 'Spare part reserved', partId, partName: part.name, actor: user });
+    addEvent({ type: 'Spare part reserved', partId, partName: part.name, siteId: part.siteId || selectedSiteId, actor: user });
     return true;
   };
 
@@ -282,7 +294,7 @@ export function DemoDataProvider({ children }) {
     const part = parts.find((item) => item.id === partId);
     if (!part || part.stock + delta < part.reserved) return false;
     setParts((current) => current.map((item) => item.id === partId ? { ...item, stock: item.stock + delta } : item));
-    addEvent({ type: transaction, partId, partName: part.name, quantity: Math.abs(delta), actor: user });
+    addEvent({ type: transaction, partId, partName: part.name, quantity: Math.abs(delta), siteId: part.siteId || selectedSiteId, actor: user });
     return true;
   };
 
