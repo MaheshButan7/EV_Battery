@@ -4,7 +4,6 @@ import { getSite, getSiteAlarms } from '../services/api';
 import ChartCard from '../components/ChartCard';
 import SohRing from '../components/SohRing';
 import MetricBar from '../components/MetricBar';
-import SimulatedDataBadge from '../components/ui/SimulatedDataBadge';
 import { useDemoData } from '../hooks/useDemoData';
 import { StatusBadge } from '../components/StatusBadge';
 import { useTheme } from '../hooks/useTheme';
@@ -30,11 +29,11 @@ import {
 
 function tooltipStyle(isDark) {
   return {
-    backgroundColor: isDark ? '#0f172a' : '#ffffff',
-    borderColor: isDark ? '#334155' : '#cbd5e1',
+    backgroundColor: isDark ? '#0e1a2b' : '#ffffff',
+    borderColor: isDark ? '#26364b' : '#dfe7f1',
     borderRadius: '0.75rem',
     fontSize: '12px',
-    color: isDark ? '#f8fafc' : '#0f172a',
+    color: isDark ? '#f8fafc' : '#172033',
   };
 }
 
@@ -43,7 +42,7 @@ export default function SiteDashboard() {
   const { id } = useParams();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+  const gridColor = isDark ? '#26364b' : '#e2eaf2';
   const axisColor = isDark ? '#94a3b8' : '#64748b';
   const { alarms } = useDemoData();
 
@@ -117,7 +116,6 @@ export default function SiteDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <SimulatedDataBadge />
           <Link
             to={`/site/${site.id}/sld`}
             className="rounded-xl border border-cyan-500/25 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-700 transition-colors hover:bg-cyan-500/20 dark:text-cyan-300"

@@ -183,12 +183,27 @@ export default function Login() {
               <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
                 Demo Credentials
               </p>
+              <p className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">Click a credential set to fill the sign-in form.</p>
               {DEMO_CREDENTIALS.map((c) => (
-                <div key={c.email} className="text-xs font-mono text-slate-700 dark:text-slate-300 space-y-1">
-                  <div><span className="text-slate-400">Email:</span> {c.email}</div>
-                  <div><span className="text-slate-400">Pass:</span> {c.password}</div>
-                  <div><span className="text-slate-400">Role:</span> {c.role}</div>
-                </div>
+                <button
+                  key={c.email}
+                  type="button"
+                  aria-label={`Fill sign-in fields with the ${c.role} demo credentials`}
+                  onClick={() => {
+                    setEmail(c.email);
+                    setPassword(c.password);
+                    setEmailError('');
+                    setPasswordError('');
+                    setError('');
+                  }}
+                  className="w-full cursor-pointer rounded-lg text-left font-mono text-xs text-slate-700 transition-colors hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 dark:text-slate-300 dark:hover:bg-slate-700/60"
+                >
+                  <span className="block space-y-1 p-2">
+                    <span className="block"><span className="text-slate-400">Email:</span> {c.email}</span>
+                    <span className="block"><span className="text-slate-400">Pass:</span> {c.password}</span>
+                    <span className="block"><span className="text-slate-400">Role:</span> {c.role}</span>
+                  </span>
+                </button>
               ))}
             </div>
           </div>

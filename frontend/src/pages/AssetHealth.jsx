@@ -20,7 +20,7 @@ export default function AssetHealth() {
   return (
     <PageFrame title="Asset Health & Predictive Maintenance" description="Health scores, degradation signals and explainable recommendations across all BESS sites.">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[['Average site health', averageHealth.toFixed(1), Activity], ['Sites at risk', atRiskCount, Thermometer], ['Predictions simulated', accessibleSites.length * 4, BrainCircuit]].map(([label, value, Icon]) => <div key={label} className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><Icon className="h-5 w-5 text-cyan-500" /><p className="mt-3 text-xs font-semibold uppercase text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">{value}</p></div>)}
+        {[['Average site health', averageHealth.toFixed(1), Activity], ['Sites at risk', atRiskCount, Thermometer], ['Health indicators', accessibleSites.length * 4, BrainCircuit]].map(([label, value, Icon]) => <div key={label} className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><Icon className="h-5 w-5 text-cyan-500" /><p className="mt-3 text-xs font-semibold uppercase text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold text-slate-900 dark:text-white">{value}</p></div>)}
       </div>
       <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
         <h2 className="text-base font-bold text-slate-900 dark:text-white">Assets requiring attention</h2>
@@ -31,7 +31,7 @@ export default function AssetHealth() {
           })}
         </div>
       </div>
-      <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-200"><strong>Simulated model card:</strong> predictions use seeded synthetic telemetry and rules for demonstration. They are not validated production model results.</div>
+      <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4 text-xs text-slate-700 dark:text-slate-300"><strong>Health model:</strong> recommendations combine equipment signals, degradation trends, and maintenance thresholds.</div>
     </PageFrame>
   );
 }

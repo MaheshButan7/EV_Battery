@@ -38,7 +38,7 @@ export default function SiteSld() {
   const critical = site.id === 'BESS-JODHUR';
 
   return (
-    <PageFrame title={`${site.name} · Single Line Diagram`} description="Live electrical topology and equipment status for the selected site.">
+    <PageFrame title="SLD" description={`${site.name} · Electrical topology and equipment status.`}>
       <div className="surface-card overflow-x-auto rounded-2xl border bg-white p-5 dark:bg-slate-900 lg:p-8">
         <div className="flex min-w-[900px] items-center justify-center gap-3 py-10">
           <SldNode icon={Radio} label="Grid" value={`${eq.energyMeter.todayDischargedMWh} MWh`} status="Connected" tone="cyan" />

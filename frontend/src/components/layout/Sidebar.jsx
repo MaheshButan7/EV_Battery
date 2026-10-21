@@ -1,29 +1,82 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import companyLogo from '../../assets/company_logo.webp';
 import { PRODUCT_NAME } from '../../config';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronDown, LogOut, X } from 'lucide-react';
 import { navigationGroups } from '../../config/navigation';
 import { useDemoData } from '../../hooks/useDemoData';
+import { useAuth } from '../../hooks/useAuth';
 
-export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobileOpen, currentSiteId = 'BESS-JODHUR' }) {
+function UserMenu({ collapsed, mobileOpen }) {
+  const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  return (
+    <div className={`relative flex-1 p-3 ${collapsed && !mobileOpen ? 'flex justify-center' : ''}`} ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => setMenuOpen((open) => !open)}
+        className={`flex w-full items-center gap-2 rounded-xl p-1.5 text-left transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 dark:hover:bg-slate-800 ${collapsed && !mobileOpen ? 'w-auto' : ''}`}
+        aria-haspopup="true"
+        aria-expanded={menuOpen}
+        aria-label="User menu"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-xs font-bold text-white shadow-sm">
+          {user?.name?.[0] ?? 'U'}
+        </div>
+        {(!collapsed || mobileOpen) && (
+          <>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold leading-tight text-slate-900 dark:text-white">{user?.name ?? 'User'}</p>
+              <p className="truncate text-[10px] text-slate-500 dark:text-slate-400">{user?.role ?? 'Viewer'}</p>
+            </div>
+            <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+          </>
+        )}
+      </button>
+      {menuOpen && (
+        <div className={`absolute bottom-full z-50 mb-2 w-56 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 ${collapsed && !mobileOpen ? 'left-3' : 'left-3 right-3'}`}>
+          <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+            <p className="text-xs font-bold text-slate-900 dark:text-white">{user?.name}</p>
+            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{user?.email}</p>
+            <p className="text-[11px] font-medium text-cyan-600 dark:text-cyan-400">{user?.role}</p>
+          </div>
+          <div className="p-1.5">
+            <button
+              type="button"
+              onClick={async () => { setMenuOpen(false); await logout(); }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-500/10 focus:outline-none focus:ring-2 focus:ring-rose-500/50 dark:text-rose-400"
+            >
+              <LogOut className="h-4 w-4" /> Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Sidebar({ collapsed, mobileOpen, setMobileOpen, currentSiteId = 'BESS-JODHUR' }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { alarms, accessibleSites, selectedSiteId, selectSite } = useDemoData();
+  const { alarms } = useDemoData();
   const activeAlarmCount = alarms.filter((alarm) => alarm.state === 'Active').length;
-
-  const handleSiteChange = (nextSiteId) => {
-    selectSite(nextSiteId);
-
-    const siteRoute = location.pathname.match(/^\/site\/[^/]+(\/.*)?$/);
-    if (siteRoute) {
-      navigate({
-        pathname: `/site/${nextSiteId}${siteRoute[1] || ''}`,
-        search: location.search,
-        hash: location.hash,
-      }, { replace: true });
-    }
-  };
 
   const sidebarContent = (
     <div className="flex h-full flex-col border-r border-slate-200/90 bg-[var(--app-nav)] transition-all duration-300 select-none dark:border-slate-800/90">
@@ -49,14 +102,6 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
 
       {/* Nav Items */}
       <div className="flex-1 space-y-5 overflow-y-auto px-3 py-5">
-        {(!collapsed || mobileOpen) && (
-          <label className="block px-1">
-            <span className="mb-1.5 block px-2 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500">Active site</span>
-            <select value={selectedSiteId} onChange={(event) => handleSiteChange(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              {accessibleSites.map((site) => <option key={site.id} value={site.id}>{site.name}</option>)}
-            </select>
-          </label>
-        )}
         {navigationGroups.map((group) => (
           <div key={group.label} className="space-y-1">
             {(!collapsed || mobileOpen) && (
@@ -118,25 +163,16 @@ export default function Sidebar({ collapsed, setCollapsed, mobileOpen, setMobile
         ))}
       </div>
 
-      {/* Collapse toggle (desktop) */}
-      <div className="hidden lg:flex items-center justify-between p-3 border-t border-slate-200 dark:border-slate-800">
-        {!collapsed && (
-          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">Operations Console · v1.0</span>
-        )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mx-auto"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
-        </button>
+      {/* Account and collapse controls */}
+      <div className="flex items-center border-t border-slate-200 dark:border-slate-800">
+        <UserMenu collapsed={collapsed} mobileOpen={mobileOpen} />
       </div>
     </div>
   );
 
   return (
     <>
-      <aside className={`hidden lg:block shrink-0 h-screen sticky top-0 z-30 transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
+      <aside className={`sticky top-0 z-30 hidden h-dvh shrink-0 transition-all duration-300 lg:block ${collapsed ? 'w-20' : 'w-64'}`}>
         {sidebarContent}
       </aside>
       {mobileOpen && (

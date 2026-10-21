@@ -81,7 +81,6 @@ export default function Executive() {
     <PageFrame
       title="Executive Dashboard"
       description="Fleet-wide performance, material risks and decision priorities across every site."
-      actions={<span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-cyan-700 dark:text-cyan-300"><span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />All sites · {accessibleSites.length}</span>}
     >
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Fleet executive indicators">
         {kpiDefinitions.map(({ label, icon: Icon, format }, index) => (
@@ -132,7 +131,7 @@ export default function Executive() {
 
         <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900 lg:p-6">
           <h2 className="text-base font-bold text-slate-900 dark:text-white">Fleet outlook</h2>
-          <p className="mt-1 text-xs text-slate-500">A concise readout of the current simulated fleet data.</p>
+          <p className="mt-1 text-xs text-slate-500">A concise readout of current fleet performance.</p>
           <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
             {criticalCount > 0
               ? `${criticalCount} critical ${criticalCount === 1 ? 'alarm is' : 'alarms are'} active across the fleet${leadRiskSite ? `, led by ${leadRisk?.title} at ${leadRiskSite.name}` : ''}.`
@@ -140,8 +139,6 @@ export default function Executive() {
             {atRiskSites > 0 ? ` ${atRiskSites} ${atRiskSites === 1 ? 'site has' : 'sites have'} high operational risk and should remain on the leadership watchlist.` : ' No sites are currently rated high risk.'}
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <span className="rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase text-amber-700 dark:text-amber-300">Simulated insight</span>
-            <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-semibold text-slate-500 dark:border-slate-700">{accessibleSites.length} sites in scope</span>
           </div>
         </div>
       </section>

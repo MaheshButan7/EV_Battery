@@ -21,9 +21,9 @@ export const navigationGroups = [
     label: 'Operations',
     items: [
       { id: 'fleet', name: 'Fleet Overview', path: '/', icon: LayoutDashboard },
-      { id: 'map', name: 'Site Map', path: '/map', icon: Map },
+      { id: 'map', name: 'GIS/ Site Map', path: '/map', icon: Map },
       { id: 'site', name: 'Site Operations', path: '/site/:siteId', icon: Zap },
-      { id: 'sld', name: 'Site SLD', path: '/site/:siteId/sld', icon: Activity },
+      { id: 'sld', name: 'Single Line Diagram', path: '/site/:siteId/sld', icon: Activity },
       { id: 'battery', name: 'Battery & Cells', path: '/site/:siteId/battery', icon: Battery },
       { id: 'pcs', name: 'PCS & Power Conversion', path: '/site/:siteId/pcs', icon: Cpu },
       { id: 'hazards', name: 'Safety & Hazards', path: '/hazards', icon: ShieldAlert },

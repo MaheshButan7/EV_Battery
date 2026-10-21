@@ -168,7 +168,7 @@ export default function HistoricalTrends() {
   const exportSeries = (extension) => downloadSeries(visibleSeries, siteName, selectedSignal, extension);
 
   return (
-    <PageFrame title="Historical Trends" description="Explore synthetic site telemetry over selectable time windows and sampling resolutions.">
+    <PageFrame title="Historical Trends" description="Explore site telemetry over selectable time windows and sampling resolutions.">
       <div className="surface-card flex flex-wrap items-end gap-3 rounded-2xl border bg-white p-4 dark:bg-slate-900">
         <div className="min-w-[220px] flex-1">
           <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Selected asset</span>
@@ -220,7 +220,7 @@ export default function HistoricalTrends() {
       </ChartCard>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-xs text-cyan-900 dark:text-cyan-200">
-        <span className="flex items-center gap-2"><Activity className="h-4 w-4 shrink-0" />Synthetic demo telemetry. Range and resolution control the generated sample window and point count; displayed retention target is 3 years.</span>
+        <span className="flex items-center gap-2"><Activity className="h-4 w-4 shrink-0" />Range and resolution control the sample window and point count; displayed retention target is 3 years.</span>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" icon={Download} onClick={() => exportSeries('csv')}>Export CSV</Button>
           <Button variant="secondary" size="sm" icon={Download} onClick={() => exportSeries('xls')}>Export Excel-compatible</Button>

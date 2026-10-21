@@ -17,7 +17,7 @@ export default function BatteryCells() {
   return (
     <PageFrame
       title="Battery & Cells"
-      description={`${site.name} · ${site.capacityMW} MW / ${site.capacityMWh} MWh · 5,000 synthetic cells`}
+      description={`${site.name} · ${site.capacityMW} MW / ${site.capacityMWh} MWh · 5,000 cells`}
     >
       <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900 lg:p-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

@@ -11,13 +11,14 @@ export default function ThemeToggle() {
       onClick={toggleTheme}
       type="button"
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+      aria-pressed={isDark}
       title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-      className="relative p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-cyan-500 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+      className="group inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-cyan-700 dark:hover:bg-cyan-950/40 dark:hover:text-cyan-300 motion-reduce:transition-none"
     >
       {isDark ? (
-        <Sun className="w-5 h-5 text-amber-400 transition-transform duration-300 rotate-0 hover:rotate-45" />
+        <Sun aria-hidden="true" className="h-5 w-5 text-amber-400 transition-transform duration-200 group-hover:rotate-45 motion-reduce:transition-none" strokeWidth={2} />
       ) : (
-        <Moon className="w-5 h-5 text-slate-700 transition-transform duration-300 -rotate-12 hover:rotate-0" />
+        <Moon aria-hidden="true" className="h-5 w-5 text-indigo-600 transition-transform duration-200 group-hover:-rotate-12 motion-reduce:transition-none dark:text-indigo-300" strokeWidth={2} />
       )}
     </button>
   );

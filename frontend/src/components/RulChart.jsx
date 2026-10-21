@@ -17,10 +17,10 @@ export default function RulChart({ series = [], rulYears = 4.2 }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+  const gridColor = isDark ? '#26364b' : '#e2eaf2';
   const textColor = isDark ? '#94a3b8' : '#64748b';
-  const tooltipBg = isDark ? '#0f172a' : '#ffffff';
-  const tooltipBorder = isDark ? '#334155' : '#cbd5e1';
+  const tooltipBg = isDark ? '#0e1a2b' : '#ffffff';
+  const tooltipBorder = isDark ? '#26364b' : '#dfe7f1';
 
   // Format dataset to create confidence area band: [lowerBound, upperBound]
   const chartData = series.map((item) => ({
@@ -93,7 +93,7 @@ export default function RulChart({ series = [], rulYears = 4.2 }) {
                 borderColor: tooltipBorder,
                 borderRadius: '0.75rem',
                 fontSize: '12px',
-                color: isDark ? '#f8fafc' : '#0f172a',
+                color: isDark ? '#f8fafc' : '#172033',
                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
               }}
               formatter={(value, name) => {

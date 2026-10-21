@@ -83,6 +83,72 @@ const otherSiteWorkOrders = mockSites.filter((site) => site.id !== 'BESS-JODHUR'
 
 const initialWorkOrders = [...jodhpurWorkOrders, ...otherSiteWorkOrders];
 
+// Seed operator and inventory history so the demo is populated on first load.
+// These records are intentionally fixed sample data; user actions add new rows in-session.
+const initialEvents = [
+  { id: 'EVT-DEMO-001', timestamp: '2026-10-21T08:42:00.000Z', type: 'Alarm acknowledged', alarmId: 'ALM-JOD-002', siteId: 'BESS-JODHUR', actor: 'A. Rao' },
+  { id: 'EVT-DEMO-002', timestamp: '2026-10-21T08:18:00.000Z', type: 'Work order created', alarmId: 'ALM-JOD-001', workOrderId: 'WO-2841', siteId: 'BESS-JODHUR', actor: 'Control Room' },
+  { id: 'EVT-DEMO-003', timestamp: '2026-10-21T07:55:00.000Z', type: 'Spare part reserved', partId: 'SP-014', partName: 'HVAC filter kit', siteId: 'BESS-JODHUR', actor: 'R. Mehta' },
+  { id: 'EVT-DEMO-004', timestamp: '2026-10-21T07:31:00.000Z', type: 'Inventory receipt', partId: 'SP-032', partName: 'HVAC filter kit', quantity: 4, siteId: 'BESS-PUNE', actor: 'Store Operator' },
+  { id: 'EVT-DEMO-005', timestamp: '2026-10-21T06:58:00.000Z', type: 'Spare part reserved', partId: 'SP-041', partName: 'Fiber gateway module', siteId: 'BESS-CHENNAI', actor: 'N. Iyer' },
+  { id: 'EVT-DEMO-006', timestamp: '2026-10-21T06:22:00.000Z', type: 'Inventory issue', partId: 'SP-016', partName: 'HVAC blower motor', quantity: 1, siteId: 'BESS-RAIPUR', actor: 'V. Shah' },
+  { id: 'EVT-DEMO-007', timestamp: '2026-10-21T05:47:00.000Z', type: 'Permit updated', permitId: 'PTW-2026-0042', siteId: 'BESS-JODHUR', actor: 'A. Rao' },
+  { id: 'EVT-DEMO-008', timestamp: '2026-10-21T05:16:00.000Z', type: 'Alarm acknowledged', alarmId: 'ALM-CHN-001', siteId: 'BESS-CHENNAI', actor: 'Control Room' },
+  { id: 'EVT-DEMO-009', timestamp: '2026-10-21T04:39:00.000Z', type: 'Inventory adjustment', partId: 'SP-024', partName: 'Thermal sensor harness', quantity: 2, siteId: 'BESS-JODHUR', actor: 'Store Operator' },
+  { id: 'EVT-DEMO-010', timestamp: '2026-10-21T04:02:00.000Z', type: 'Work order status updated', workOrderId: 'WO-2856', siteId: 'BESS-JODHUR', actor: 'R. Mehta' },
+];
+
+const alarmTemplates = [
+  ['Cell voltage deviation', 'Cell voltage is outside the normal balancing band.', 'BMS-RACK-03', 'Major'],
+  ['Module temperature elevated', 'Module temperature is above the configured warning threshold.', 'BMS-MODULE-04', 'Warning'],
+  ['Rack insulation resistance low', 'Insulation resistance is below the maintenance setpoint.', 'DC-RACK-02', 'Major'],
+  ['HVAC filter service due', 'Airflow differential indicates that the filter should be inspected.', 'HVAC-UNIT-01', 'Minor'],
+  ['PCS reactive power deviation', 'Measured reactive power differs from the active setpoint.', 'PCS-01', 'Warning'],
+  ['DC bus voltage high', 'DC bus voltage briefly exceeded the operating band.', 'PCS-DC-BUS', 'Major'],
+  ['Transformer oil temperature warning', 'Transformer oil temperature is above its normal operating range.', 'TX-01', 'Warning'],
+  ['Gateway packet loss', 'Telemetry packet loss exceeded the configured communication threshold.', 'EDGE-GW-01', 'Minor'],
+  ['Smoke detector inspection due', 'Routine inspection is due for the container smoke detector.', 'FIRE-PANEL-01', 'Info'],
+  ['Door sensor state changed', 'Container access sensor registered an unplanned state change.', 'ENV-DOOR-02', 'Minor'],
+  ['SOC balancing requested', 'String state of charge spread requires balancing review.', 'BMS-STRING-01', 'Info'],
+  ['Cooling setpoint deviation', 'Measured supply air temperature differs from the configured setpoint.', 'HVAC-UNIT-02', 'Warning'],
+];
+
+const siteAlarmCodes = {
+  'BESS-PUNE': 'PUN',
+  'BESS-JODHUR': 'JOD',
+  'BESS-CHENNAI': 'CHN',
+  'BESS-RAIPUR': 'RAI',
+};
+
+const staticAlarmTimestamp = (hoursAgo) => new Date(Date.UTC(2026, 9, 21, 12) - hoursAgo * 60 * 60 * 1000).toISOString();
+
+function makeInitialAlarms() {
+  const alarmsBySite = Object.fromEntries(mockSites.map((site) => [site.id, []]));
+  mockFleetOverview.recentAlarms.forEach((alarm, index) => {
+    const siteAlarms = alarmsBySite[alarm.siteId];
+    siteAlarms.push({ ...alarm, timestamp: staticAlarmTimestamp(index + 1) });
+  });
+
+  mockSites.forEach((site) => {
+    const siteAlarms = alarmsBySite[site.id];
+    const code = siteAlarmCodes[site.id];
+    for (let index = siteAlarms.length; index < 32; index += 1) {
+      const [title, description, equipment, priority] = alarmTemplates[(index * 7 + mockSites.indexOf(site)) % alarmTemplates.length];
+      siteAlarms.push({
+        id: `ALM-${code}-${String(index + 1).padStart(3, '0')}`,
+        siteId: site.id,
+        priority,
+        title,
+        description: `${description} Sample alert ${index + 1} for ${site.name}.`,
+        timestamp: staticAlarmTimestamp((index + 1) * 3),
+        equipment: `${equipment}-${code}`,
+      });
+    }
+  });
+
+  return mockSites.flatMap((site) => alarmsBySite[site.id]);
+}
+
 export function DemoDataProvider({ children }) {
   const { user } = useAuth();
   const accessibleSiteIds = user?.siteIds?.length ? user.siteIds : mockSites.map((site) => site.id);
@@ -90,7 +156,7 @@ export function DemoDataProvider({ children }) {
   const [selectedSiteId, setSelectedSiteId] = useState(() => localStorage.getItem('bess_selected_site') || defaultSiteId);
   const [tick, setTick] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(() => new Date());
-  const [alarms, setAlarms] = useState(() => mockFleetOverview.recentAlarms.map((alarm) => ({
+  const [alarms, setAlarms] = useState(() => makeInitialAlarms().map((alarm) => ({
     ...alarm,
     state: 'Active',
     acknowledgedAt: null,
@@ -98,7 +164,7 @@ export function DemoDataProvider({ children }) {
     workOrderId: null,
   })));
   const [workOrders, setWorkOrders] = useState(() => initialWorkOrders);
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(initialEvents);
   const [permit, setPermit] = useState({
     id: 'PTW-2026-0042',
     state: 'Requested',
@@ -302,12 +368,19 @@ export function DemoDataProvider({ children }) {
     tick,
     lastUpdated,
     connection: 'Connected',
-    isSimulated: true,
     accessibleSiteIds,
-    accessibleSites: mockSites.filter((site) => accessibleSiteIds.includes(site.id)),
+    accessibleSites: mockSites.filter((site) => accessibleSiteIds.includes(site.id)).map((site) => ({
+      ...site,
+      activeAlarms: alarms.filter((alarm) => alarm.siteId === site.id && alarm.state === 'Active').length,
+    })),
     accessibleAlarms: alarms.filter((alarm) => accessibleSiteIds.includes(alarm.siteId)),
     selectedSiteId,
-    selectedSite: mockSites.find((site) => site.id === selectedSiteId) || null,
+    selectedSite: mockSites.some((site) => site.id === selectedSiteId)
+      ? {
+        ...mockSites.find((site) => site.id === selectedSiteId),
+        activeAlarms: alarms.filter((alarm) => alarm.siteId === selectedSiteId && alarm.state === 'Active').length,
+      }
+      : null,
     selectSite,
     alarms: alarms.filter((alarm) => alarm.siteId === selectedSiteId),
     workOrders: workOrders.filter((workOrder) => !workOrder.siteId || workOrder.siteId === selectedSiteId),

@@ -102,7 +102,7 @@ export default function Maintenance() {
           ['Preventive plans', plans.length, 'Recurring schedules'],
           ['Checklist completion', `${checklistCompletion}%`, `${checklistItems.filter((item) => item.done).length} of ${checklistItems.length} inspection steps`],
           ['Planned work', `${plannedRatio}%`, `${plannedCount} of ${workOrders.length} orders`],
-          ['Estimated cost', `$${estimatedCost.toFixed(1)}k`, 'Synthetic labour and materials estimate'],
+          ['Estimated cost', `$${estimatedCost.toFixed(1)}k`, 'Labour and materials estimate'],
         ].map(([label, value, detail], index) => {
           const Icon = [ClipboardList, AlertTriangle, CalendarDays, ClipboardCheck, Target, CircleDollarSign][index];
           return <div key={label} className="surface-card rounded-2xl border bg-white p-4 dark:bg-slate-900"><div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</p><Icon className={`h-4 w-4 ${index === 1 && overdueCount ? 'text-rose-500' : 'text-cyan-500'}`} /></div><p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{value}</p><p className="mt-1 text-[10px] text-slate-500">{detail}</p></div>;
@@ -182,7 +182,7 @@ export default function Maintenance() {
         </div>
       </section>
 
-      <div className="flex items-center gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-xs text-cyan-900 dark:text-cyan-200"><Users className="h-5 w-5 shrink-0" />Technician assignments, checklists, work-order states and part reservations are simulated locally for this frontend demo; permit approvals remain available in Permit-to-Work.</div>
+      <div className="flex items-center gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-xs text-cyan-900 dark:text-cyan-200"><Users className="h-5 w-5 shrink-0" />Technician assignments, checklists, work-order states and part reservations are managed in this workspace; permit approvals are available in Permit-to-Work.</div>
       {notice && <p role="status" className="fixed bottom-5 right-5 z-50 max-w-sm rounded-xl border border-emerald-500/20 bg-white px-4 py-3 text-xs font-medium text-emerald-800 shadow-xl dark:bg-slate-900 dark:text-emerald-200">{notice}</p>}
     </PageFrame>
   );

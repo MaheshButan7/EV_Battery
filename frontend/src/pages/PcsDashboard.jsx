@@ -17,7 +17,7 @@ export default function PcsDashboard() {
   const pcs = site.equipment.pcs;
 
   return (
-    <PageFrame title={`${site.name} · PCS`} description="Power conversion system operating state, electrical measurements and efficiency.">
+    <PageFrame title="PCS" description={`${site.name} · Power conversion operating state, electrical measurements, and efficiency.`}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ['Active power', `${pcs.activePowerMW} MW`, Zap],
@@ -33,7 +33,7 @@ export default function PcsDashboard() {
         ))}
       </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ChartCard title="PCS operating state" subtitle="Current synthetic operating values">
+        <ChartCard title="PCS operating state" subtitle="Current operating values">
           <div className="space-y-3 text-sm">
             {[
               ['Operating mode', pcs.mode],
@@ -48,7 +48,7 @@ export default function PcsDashboard() {
             ))}
           </div>
         </ChartCard>
-        <ChartCard title="Derating and faults" subtitle="Synthetic condition assessment">
+        <ChartCard title="Derating and faults" subtitle="Condition assessment">
           <div className={`rounded-xl border p-4 ${site.id === 'BESS-PUNE' ? 'border-amber-500/30 bg-amber-500/10' : 'border-emerald-500/30 bg-emerald-500/10'}`}>
             <p className="text-sm font-bold text-slate-900 dark:text-white">{site.id === 'BESS-PUNE' ? 'Temperature derating active' : 'No active PCS derating'}</p>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{site.id === 'BESS-PUNE' ? 'Ambient heat has reduced the power setpoint for this demo scenario.' : 'PCS output is within the expected operating envelope.'}</p>

@@ -38,7 +38,7 @@ export default function Hazards() {
                   <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{severity}</span>
                 </div>
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{detail}</p>
-                <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-slate-400"><AlertTriangle className="h-3 w-3" /> Simulated hazard assessment</div>
+                <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-slate-400"><AlertTriangle className="h-3 w-3" /> Hazard assessment</div>
               </div>
             </div>
           ))}

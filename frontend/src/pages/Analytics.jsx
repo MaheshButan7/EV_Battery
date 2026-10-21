@@ -139,7 +139,7 @@ export default function Analytics() {
   const metrics = [
     { label: 'Availability', value: `${selectedSite.availability.toFixed(1)}%`, Icon: Activity, note: 'Current site value · target 99%' },
     { label: 'Round-trip efficiency', value: `${selectedSite.roundTripEfficiency.toFixed(1)}%`, Icon: Gauge, note: 'Current site value' },
-    { label: 'Energy delivered today', value: `${selectedSite.energyTodayMWh.toFixed(1)} MWh`, Icon: Zap, note: 'Synthetic site meter reading' },
+    { label: 'Energy delivered today', value: `${selectedSite.energyTodayMWh.toFixed(1)} MWh`, Icon: Zap, note: 'Site meter reading' },
     { label: 'Battery state of health', value: `${selectedSite.soh.toFixed(1)}%`, Icon: Battery, note: `Estimated remaining life · ${selectedSite.rul.toFixed(1)} years` },
   ];
 
@@ -147,14 +147,13 @@ export default function Analytics() {
     <PageFrame
       title="Analytics & Asset Performance"
       description={`${selectedSite.name} performance, energy and battery health, with alarm patterns across the fleet.`}
-      actions={<span className="rounded-full border border-cyan-500/25 bg-cyan-500/[0.08] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">Selected site · {selectedSite.name}</span>}
     >
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Selected site performance indicators">
         {metrics.map((metric) => <MetricCard key={metric.label} {...metric} />)}
       </section>
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-2" aria-label="Selected site trends">
-        <ChartCard title="Operating performance" subtitle="Six-month synthetic trend for the selected site; latest point matches site KPIs" badgeText="%">
+        <ChartCard title="Operating performance" subtitle="Six-month trend for the selected site; latest point matches site KPIs" badgeText="%">
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={performanceTrend} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#26364b' : '#e2eaf2'} />
@@ -178,7 +177,7 @@ export default function Analytics() {
               <Tooltip contentStyle={tooltipStyle(isDark)} formatter={(value) => [`${value}%`, 'State of health']} />
               <ReferenceLine y={80} stroke="#f97316" strokeDasharray="5 4" label={{ value: 'Review threshold', fill: '#c2410c', fontSize: 9 }} />
               <ReferenceLine x="Now" stroke={isDark ? '#64748b' : '#94a3b8'} strokeDasharray="3 4" />
-              <Line type="monotone" dataKey="observed" name="Synthetic history" stroke="#06b6d4" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} connectNulls={false} />
+              <Line type="monotone" dataKey="observed" name="History" stroke="#06b6d4" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} connectNulls={false} />
               <Line type="monotone" dataKey="projection" name="Illustrative projection" stroke="#8b5cf6" strokeWidth={2.5} strokeDasharray="6 4" dot={false} activeDot={{ r: 4 }} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
@@ -230,7 +229,7 @@ export default function Analytics() {
       </ChartCard>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4 text-xs">
-        <span className="text-slate-700 dark:text-slate-200">Synthetic demo analytics. Performance, health history, projection and energy profiles illustrate the intended reporting views.</span>
+        <span className="text-slate-700 dark:text-slate-200">Performance, health history, projections, and energy profiles provide a unified operational view.</span>
         <span className="text-slate-500">{activeSiteAlarms} active alarms at {selectedSite.name}</span>
       </div>
     </PageFrame>

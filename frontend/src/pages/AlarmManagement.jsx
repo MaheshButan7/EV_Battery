@@ -14,6 +14,21 @@ const severityFilters = [
   { label: 'Information', value: 'Info' },
 ];
 
+const demoReferenceTime = new Date('2026-10-21T12:00:00.000Z').getTime();
+const timeRanges = [
+  { label: 'Last 24 hours', value: '24h', duration: 24 * 60 * 60 * 1000 },
+  { label: 'Last 7 days', value: '7d', duration: 7 * 24 * 60 * 60 * 1000 },
+  { label: 'Last 30 days', value: '30d', duration: 30 * 24 * 60 * 60 * 1000 },
+  { label: 'All time', value: 'all', duration: Infinity },
+];
+
+function formatAlarmTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 export default function AlarmManagement() {
   const [searchParams] = useSearchParams();
   const {
@@ -24,13 +39,19 @@ export default function AlarmManagement() {
     createWorkOrderFromAlarm,
   } = useDemoData();
   const [filter, setFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [timeRange, setTimeRange] = useState('7d');
   const [query, setQuery] = useState(() => searchParams.get('query') || '');
 
   const visible = useMemo(() => alarms.filter((alarm) => {
-    const matchesFilter = filter === 'All' || alarm.priority === filter || alarm.state === filter;
+    const matchesPriority = filter === 'All' || alarm.priority === filter;
+    const matchesStatus = statusFilter === 'All' || alarm.state === statusFilter;
+    const range = timeRanges.find((item) => item.value === timeRange) || timeRanges[1];
+    const timestamp = new Date(alarm.timestamp).getTime();
+    const matchesTime = range.value === 'all' || (!Number.isNaN(timestamp) && timestamp >= demoReferenceTime - range.duration && timestamp <= demoReferenceTime);
     const haystack = `${alarm.title} ${alarm.description} ${alarm.id} ${alarm.equipment || ''}`.toLowerCase();
-    return matchesFilter && haystack.includes(query.toLowerCase());
-  }), [alarms, filter, query]);
+    return matchesPriority && matchesStatus && matchesTime && haystack.includes(query.toLowerCase());
+  }), [alarms, filter, query, statusFilter, timeRange]);
   const siteEvents = useMemo(
     () => events.filter((event) => event.siteId === selectedSite?.id),
     [events, selectedSite],
@@ -50,7 +71,7 @@ export default function AlarmManagement() {
             onClick={() => setFilter(filter === value ? 'All' : value)}
             className={`surface-card rounded-2xl border bg-white p-5 text-left transition-colors dark:bg-slate-900 ${filter === value ? 'border-cyan-400 ring-2 ring-cyan-500/15' : 'border-slate-200 dark:border-slate-800'}`}
           >
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{label} alerts</p>
             <p className="mt-2 text-2xl font-bold tabular-nums text-slate-900 dark:text-white">
               {alarms.filter((alarm) => alarm.priority === value).length}
             </p>
@@ -59,17 +80,22 @@ export default function AlarmManagement() {
       </div>
 
       <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900" aria-label="Site alarms">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <label className="flex w-full max-w-[235px] items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 dark:border-slate-700">
-              <Search className="h-4 w-4 text-slate-400" />
-              <span className="sr-only">Search site alarms</span>
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search alarms..." className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-slate-400" />
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_repeat(3,minmax(150px,190px))]">
+          <label className="flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 dark:border-slate-700">
+            <Search className="h-4 w-4 shrink-0 text-slate-400" />
+            <span className="sr-only">Search site alarms</span>
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search alarms..." className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-slate-400" />
           </label>
-          <select aria-label="Filter alarms by status or priority" value={filter} onChange={(event) => setFilter(event.target.value)} className="min-w-[130px] rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs dark:border-slate-700 dark:bg-slate-900">
-              <option value="All">All</option>
-              <option value="Active">Active</option>
-              <option value="Acknowledged">Acknowledged</option>
-              {severityFilters.map(({ label, value }) => <option key={value} value={value}>{label}</option>)}
+          <select aria-label="Filter alarms by status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs dark:border-slate-700 dark:bg-slate-900">
+            <option value="All">All statuses</option>
+            {['Active', 'Acknowledged', 'Shelved', 'Suppressed', 'Escalated'].map((status) => <option key={status} value={status}>{status}</option>)}
+          </select>
+          <select aria-label="Filter alarms by severity" value={filter} onChange={(event) => setFilter(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs dark:border-slate-700 dark:bg-slate-900">
+            <option value="All">All severities</option>
+            {severityFilters.map(({ label, value }) => <option key={value} value={value}>{label}</option>)}
+          </select>
+          <select aria-label="Filter alarms by time range" value={timeRange} onChange={(event) => setTimeRange(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs dark:border-slate-700 dark:bg-slate-900">
+            {timeRanges.map(({ label, value }) => <option key={value} value={value}>{label}</option>)}
           </select>
         </div>
 
@@ -82,12 +108,12 @@ export default function AlarmManagement() {
                   <AlertOctagon className={`mt-0.5 h-5 w-5 shrink-0 ${style.text || 'text-rose-500'}`} />
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Link to={`/site/${alarm.siteId}`} className="text-xs font-bold text-cyan-700 dark:text-cyan-300">{alarm.siteId}</Link>
+                      <Link to={`/site/${alarm.siteId}`} className="text-xs font-bold text-cyan-700 dark:text-cyan-300">{selectedSite?.name || alarm.siteId}</Link>
                       <span className="text-xs font-semibold text-slate-900 dark:text-white">{alarm.title}</span>
                       <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase ${style.badge}`}>{alarm.priority}</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{alarm.description}</p>
-                    <p className="mt-1 font-mono text-[10px] text-slate-400">{alarm.id} · {alarm.state}{alarm.equipment ? ` · ${alarm.equipment}` : ''}</p>
+                    <p className="mt-1 font-mono text-[10px] text-slate-400">{alarm.id} · {alarm.state} · {formatAlarmTime(alarm.timestamp)}{alarm.equipment ? ` · ${alarm.equipment}` : ''}</p>
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
