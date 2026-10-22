@@ -37,6 +37,14 @@ function tooltipStyle(isDark) {
   };
 }
 
+function equipmentStatusClass(status) {
+  const value = String(status).toLowerCase();
+  if (/fault|trouble|offline|unavailable|critical|trip/.test(value)) return 'bg-rose-500/10 text-rose-700 dark:text-rose-300';
+  if (/warning|attention|degraded|buffered/.test(value)) return 'bg-amber-500/10 text-amber-700 dark:text-amber-300';
+  if (/monitoring|available/.test(value)) return 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-300';
+  return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function SiteDashboard() {
   const { id } = useParams();
@@ -335,6 +343,34 @@ export default function SiteDashboard() {
           </ComposedChart>
         </ResponsiveContainer>
       </ChartCard>
+
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-2" aria-label="Electrical, safety and environmental parameters">
+        <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
+          <div className="mb-4"><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-600 dark:text-cyan-400">Electrical equipment</p><h2 className="mt-1 text-sm font-bold">Equipment measurements and protection state</h2></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              { title: 'Transformer', status: eq.transformer.status, values: [['Primary voltage', `${eq.transformer.primaryVoltageKV} kV`], ['Secondary voltage', `${eq.transformer.secondaryVoltageKV} kV`], ['Load', `${eq.transformer.loadPercent}%`], ['Oil temperature', `${eq.transformer.oilTemp} °C`], ['Tap position', eq.transformer.tapPosition]] },
+              { title: 'Switchgear', status: eq.switchgear.status, values: [['Bus voltage', `${eq.switchgear.voltageKV} kV`], ['Line current', `${eq.switchgear.currentA} A`], ['Breaker', eq.switchgear.breakerClosed ? 'Closed' : 'Open'], ['Trip state', eq.switchgear.tripState], ['Interlock', eq.switchgear.interlockState]] },
+              { title: 'Protection relay', status: eq.protectionRelay.status, values: [['Trip state', eq.protectionRelay.tripState], ['Active elements', eq.protectionRelay.activeElements]] },
+              { title: 'UPS', status: eq.ups.status, values: [['Input / output', `${eq.ups.inputVoltageV} / ${eq.ups.outputVoltageV} V`], ['Battery level', `${eq.ups.batteryLevel}%`], ['Estimated runtime', `${eq.ups.runtimeMinutes} min`], ['Bypass', eq.ups.bypassState]] },
+              { title: 'Energy meter', status: eq.energyMeter.status, values: [['Charged today', `${eq.energyMeter.todayChargedMWh} MWh`], ['Discharged today', `${eq.energyMeter.todayDischargedMWh} MWh`], ['Net energy today', `${(eq.energyMeter.todayDischargedMWh - eq.energyMeter.todayChargedMWh).toFixed(1)} MWh`]] },
+              { title: 'Auxiliary power', status: 'Online', values: [['Panel state', 'Normal'], ['Supply', 'Available']] },
+              { title: 'Edge gateway & network', status: site.commsStatus, values: [['Telemetry link', site.commsStatus], ['Last update', site.lastUpdated], ['Buffering', site.commsStatus === 'Online' ? 'No' : 'Yes'], ['Network equipment', 'Available']] },
+            ].map((card) => <article key={card.title} className="min-w-0 rounded-xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex items-center justify-between gap-2"><h3 className="text-xs font-bold">{card.title}</h3><span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${equipmentStatusClass(card.status)}`}>{card.status}</span></div><dl className="mt-2 space-y-1.5">{card.values.map(([label, value]) => <div key={label} className="flex justify-between gap-3 text-[10px]"><dt className="text-slate-500">{label}</dt><dd className="text-right font-semibold tabular-nums text-slate-700 dark:text-slate-200">{value}</dd></div>)}</dl></article>)}
+          </div>
+        </div>
+        <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
+          <div className="mb-4"><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-600 dark:text-cyan-400">Building, safety & environment</p><h2 className="mt-1 text-sm font-bold">Safety system state and site conditions</h2></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              ...eq.hvac.map((unit) => ({ title: unit.label, status: unit.status, values: [['Operating state', unit.status], ['Temperature setpoint', `${unit.setpointC} °C`], ['Return temperature', `${unit.actualC} °C`], ['Setpoint deviation', `${(unit.actualC - unit.setpointC).toFixed(1)} °C`]] })),
+              { title: 'Fire and emergency', status: eq.fireSuppression.status, values: [['Fire detection / suppression', eq.fireSuppression.status], ['Smoke detection', eq.environment.smokeDetector], ['Gas detection', eq.environment.gasDetector], ['Emergency systems', eq.environment.emergencySystem], ['Last fire system test', eq.fireSuppression.lastTestDate]] },
+              { title: 'Environmental and security sensors', status: 'Monitoring', values: [['Ambient temperature', `${eq.environment.ambientTempC} °C`], ['Humidity', `${eq.environment.humidity}%`], ['Weather', eq.environment.weather], ['Flood / water ingress', eq.environment.floodSensor], ['Door', eq.environment.doorStatus], ['Security sensors', eq.environment.securitySensors]] },
+            ].map((card) => <article key={card.title} className="min-w-0 rounded-xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex items-center justify-between gap-2"><h3 className="text-xs font-bold">{card.title}</h3><span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${equipmentStatusClass(card.status)}`}>{card.status}</span></div><dl className="mt-2 space-y-1.5">{card.values.map(([label, value]) => <div key={label} className="flex justify-between gap-3 text-[10px]"><dt className="text-slate-500">{label}</dt><dd className="max-w-[62%] text-right font-semibold text-slate-700 dark:text-slate-200">{value}</dd></div>)}</dl></article>)}
+          </div>
+          <p className="mt-3 rounded-lg bg-slate-50 p-3 text-[10px] leading-4 text-slate-500 dark:bg-slate-800/60">Sensor and equipment values are frontend demo readings. Validate sensor availability and configured thresholds with site integrations.</p>
+        </div>
+      </section>
 
       {/* Detailed predictive analysis is available from Asset Health. */}
 

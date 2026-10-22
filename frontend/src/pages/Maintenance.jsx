@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CalendarDays, ClipboardCheck, ClipboardList, CircleDollarSign, PackagePlus, Plus, Target, Users } from 'lucide-react';
+import { AlertTriangle, CalendarDays, Camera, ClipboardCheck, ClipboardList, CircleDollarSign, PackagePlus, Plus, Target, Users } from 'lucide-react';
 import PageFrame from '../components/ui/PageFrame';
 import Button from '../components/ui/Button';
 import { useDemoData } from '../hooks/useDemoData';
 
-const statuses = ['New', 'Scheduled', 'Assigned', 'In progress', 'Waiting parts', 'Done'];
+const statuses = ['New', 'Scheduled', 'Assigned', 'In progress', 'Waiting parts', 'Waiting approval', 'Done'];
 const technicians = ['Unassigned', 'R. Mehta', 'P. Kumar', 'S. Patil', 'A. Rao', 'N. Iyer', 'V. Shah'];
 
 function addDays(days) {
@@ -51,7 +51,10 @@ export default function Maintenance() {
     updateWorkOrderStatus,
     assignWorkOrder,
     updateWorkOrderChecklist,
+    updateWorkOrderDetails,
     reservePartForWorkOrder,
+    createWorkOrderFromAlarm,
+    accessibleAlarms,
     parts,
   } = useDemoData();
   const [filter, setFilter] = useState('All');
@@ -59,6 +62,7 @@ export default function Maintenance() {
   const [reserveChoices, setReserveChoices] = useState({});
   const [notice, setNotice] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [calendarView, setCalendarView] = useState('Week');
   const [newOrder, setNewOrder] = useState({ description: '', assetId: '', priority: 'Minor', type: 'Corrective' });
   const plans = useMemo(() => getPreventivePlans(selectedSite), [selectedSite]);
   const overdueCount = workOrders.filter(isOverdue).length;
@@ -76,10 +80,20 @@ export default function Maintenance() {
     if (filter === 'Open') return item.status !== 'Done';
     return item.status === filter;
   });
+  const calendarEnd = new Date();
+  calendarEnd.setHours(23, 59, 59, 999);
+  calendarEnd.setDate(calendarEnd.getDate() + (calendarView === 'Day' ? 1 : calendarView === 'Week' ? 7 : 30));
   const calendarItems = [
     ...workOrders.map((item) => ({ ...item, calendarType: item.type, calendarStatus: isOverdue(item) ? 'Overdue' : item.status || 'Scheduled' })),
     ...plans.map((item) => ({ ...item, id: item.id, calendarType: 'Preventive plan', calendarStatus: 'Scheduled', description: item.task, assignee: item.owner, status: 'Scheduled' })),
-  ].sort((a, b) => a.dueDate.localeCompare(b.dueDate)).slice(0, 7);
+  ].filter((item) => item.dueDate && new Date(`${item.dueDate}T23:59:59`) <= calendarEnd)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+  const generateAlarmWorkOrders = () => {
+    const pending = accessibleAlarms.filter((alarm) => alarm.siteId === selectedSite?.id && alarm.state !== 'Cleared' && !alarm.workOrderId);
+    pending.forEach((alarm) => createWorkOrderFromAlarm(alarm.id));
+    setNotice(pending.length ? `${pending.length} work order${pending.length === 1 ? '' : 's'} generated from active alarms.` : 'No unlinked active alarms need a work order.');
+  };
 
   const reserveForOrder = (order) => {
     const partId = reserveChoices[order.id];
@@ -132,8 +146,8 @@ export default function Maintenance() {
       </section>
 
       <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h2 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white"><CalendarDays className="h-4 w-4 text-cyan-500" />Maintenance calendar</h2><p className="mt-1 text-xs text-slate-500">Upcoming work orders and recurring preventive schedules.</p></div><span className="rounded-lg bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-cyan-700 dark:text-cyan-300">Next 7 items</span></div>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">{calendarItems.map((item) => {
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h2 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white"><CalendarDays className="h-4 w-4 text-cyan-500" />Maintenance calendar</h2><p className="mt-1 text-xs text-slate-500">Upcoming work orders, preventive plans and assigned owners.</p></div><div className="flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">{['Day', 'Week', 'Month'].map((view) => <button key={view} type="button" onClick={() => setCalendarView(view)} className={`rounded-md px-2.5 py-1.5 text-[10px] font-semibold ${calendarView === view ? 'bg-white text-cyan-700 shadow-sm dark:bg-slate-900 dark:text-cyan-300' : 'text-slate-500'}`}>{view}</button>)}</div></div>
+        {calendarItems.length ? <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">{calendarItems.map((item) => {
           const overdue = item.calendarStatus === 'Overdue';
           return <div key={item.id} className={`rounded-xl border p-3 ${overdue ? 'border-rose-500/25 bg-rose-500/[0.04]' : 'border-slate-200 dark:border-slate-800'}`}>
             <div className="flex items-center justify-between gap-2"><span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{item.calendarType}</span><span className={`rounded-full px-2 py-0.5 text-[9px] font-semibold ${statusClass(item.calendarStatus, overdue)}`}>{item.calendarStatus}</span></div>
@@ -141,12 +155,13 @@ export default function Maintenance() {
             <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-slate-500"><span>{formatDate(item.dueDate)}</span><span>{item.assignee || 'Unassigned'}</span></div>
             {item.frequency && <p className="mt-1 text-[10px] text-cyan-700 dark:text-cyan-300">Repeats {item.frequency}</p>}
           </div>;
-        })}</div>
+        })}</div> : <p className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-xs text-slate-500 dark:border-slate-800">No work is due in this {calendarView.toLowerCase()} view.</p>}
       </section>
 
       <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div><h2 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white"><ClipboardList className="h-4 w-4 text-cyan-500" />Work orders</h2><p className="mt-1 text-xs text-slate-500">Assign technicians, track execution and open each order’s inspection checklist.</p></div>
+          <Button size="sm" variant="secondary" icon={AlertTriangle} onClick={generateAlarmWorkOrders}>Generate from unlinked alarms</Button>
           <label className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Show <select value={filter} onChange={(event) => setFilter(event.target.value)} className="rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs font-medium normal-case tracking-normal text-slate-700 dark:border-slate-700 dark:text-slate-200"><option>All</option><option>Open</option><option>Overdue</option>{statuses.map((status) => <option key={status}>{status}</option>)}</select></label>
         </div>
         <div className="overflow-x-auto">
@@ -170,6 +185,7 @@ export default function Maintenance() {
                 {expandedId === order.id && <tr className="border-b border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-800/30"><td colSpan={7} className="p-4">
                   <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                     <div><h3 className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white"><ClipboardCheck className="h-4 w-4 text-cyan-500" />Digital inspection checklist</h3><div className="mt-3 space-y-2">{(order.checklist || []).map((item) => <label key={item.id} className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-2.5 text-[11px] dark:border-slate-700 dark:bg-slate-900"><input type="checkbox" checked={Boolean(item.done)} onChange={(event) => updateWorkOrderChecklist(order.id, item.id, event.target.checked)} className="mt-0.5 accent-cyan-600" /><span className={item.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200'}>{item.label}</span></label>)}</div></div>
+                    <div className="mt-5 rounded-xl border border-slate-200 p-3 dark:border-slate-800"><h3 className="text-xs font-bold">Work execution record</h3><p className="mt-1 text-[10px] text-slate-500">SOP: BESS safe isolation and inspection · Source: {order.alarmId ? `Alarm ${order.alarmId}` : order.type === 'Predictive' ? 'Predictive recommendation' : 'Maintenance plan'}</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Due date<input type="date" value={order.dueDate || ''} onChange={(event) => updateWorkOrderDetails(order.id, { dueDate: event.target.value })} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-2.5 py-2 text-[11px] normal-case tracking-normal dark:border-slate-700" /></label><label className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Labor hours<input type="number" min="0" step="0.5" value={order.laborHours || ''} onChange={(event) => updateWorkOrderDetails(order.id, { laborHours: event.target.value })} placeholder="Record hours" className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-2.5 py-2 text-[11px] normal-case tracking-normal dark:border-slate-700" /></label><label className="text-[9px] font-bold uppercase tracking-wide text-slate-500 sm:col-span-2">Work notes<textarea rows={2} value={order.notes || ''} onChange={(event) => updateWorkOrderDetails(order.id, { notes: event.target.value })} placeholder="Record findings and completion notes" className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-2.5 py-2 text-[11px] normal-case tracking-normal dark:border-slate-700" /></label><label className="text-[9px] font-bold uppercase tracking-wide text-slate-500 sm:col-span-2"><span className="flex items-center gap-1"><Camera className="h-3 w-3" />Photographic evidence</span><input type="file" accept="image/*" onChange={(event) => updateWorkOrderDetails(order.id, { photoEvidence: event.target.files?.[0]?.name || '' })} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-2.5 py-2 text-[10px] normal-case tracking-normal dark:border-slate-700" />{order.photoEvidence && <span className="mt-1 block normal-case text-emerald-700 dark:text-emerald-300">Attached: {order.photoEvidence} · demo metadata only</span>}</label><label className="text-[9px] font-bold uppercase tracking-wide text-slate-500 sm:col-span-2">Digital sign-off<input value={order.signature || ''} onChange={(event) => updateWorkOrderDetails(order.id, { signature: event.target.value })} placeholder="Type technician name to sign" className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-2.5 py-2 text-[11px] normal-case tracking-normal dark:border-slate-700" /></label></div></div>
                     <div><h3 className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white"><PackagePlus className="h-4 w-4 text-cyan-500" />Reserved spare parts</h3><div className="mt-3 flex flex-wrap gap-2">{reserved.length ? reserved.map((part) => <span key={part.id} className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">{part.name} · {part.id}</span>) : <span className="text-[10px] text-slate-500">No parts reserved for this work order.</span>}</div>
                       <div className="mt-3 flex flex-wrap items-center gap-2"><select aria-label={`Select spare part for ${order.id}`} value={selectedPart} onChange={(event) => setReserveChoices((current) => ({ ...current, [order.id]: event.target.value }))} disabled={!availableParts.length} className="min-w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] dark:border-slate-700 dark:bg-slate-900"><option value="">{availableParts.length ? 'Choose a part' : 'No available parts'}</option>{availableParts.map((part) => <option key={part.id} value={part.id}>{part.name} · {part.stock - part.reserved} available</option>)}</select><Button size="sm" variant="secondary" icon={PackagePlus} disabled={!selectedPart} onClick={() => reserveForOrder(order)}>Reserve part</Button></div>
                     </div>

@@ -4,7 +4,7 @@ import { Barcode, CalendarDays, ChevronRight, Clock3, History, Search, ShieldChe
 import PageFrame from '../components/ui/PageFrame';
 import { useDemoData } from '../hooks/useDemoData';
 
-const assetTypes = ['All', 'Site', 'Container', 'Rack', 'BMS', 'PCS', 'Transformer', 'Switchgear', 'HVAC', 'Fire System', 'Gateway'];
+const assetTypes = ['All', 'Site', 'Container', 'Rack', 'Module', 'Cell', 'BMS', 'PCS', 'Transformer', 'Switchgear', 'Protection Relay', 'Energy Meter', 'HVAC', 'Fire System', 'UPS', 'Gateway', 'Network Equipment', 'Sensor', 'Auxiliary Power'];
 
 function addDays(date, days) {
   const value = new Date(`${date}T00:00:00`);
@@ -43,6 +43,17 @@ function makeAsset(site, suffix, name, type, parentId, options = {}) {
     status: options.status || 'Healthy',
     manufacturer: options.manufacturer || site.oem,
     serialNumber: `${id.replaceAll('-', '')}-SN-${String((options.serial || 1) * 1847).padStart(6, '0')}`,
+    modelNumber: options.model || `${type.toUpperCase().replaceAll(' ', '-')}-LFP-${String((options.serial || 1) + 100).padStart(3, '0')}`,
+    firmware: options.firmware || `v${1 + ((options.serial || 1) % 3)}.${(options.serial || 1) % 10}.4`,
+    manufactureDate: addDays(commissionedDate, -180),
+    designLifeYears: options.designLife || (type === 'Cell' || type === 'Module' || type === 'Rack' ? 15 : 20),
+    criticality: options.criticality || (['BMS', 'PCS', 'Fire System', 'Protection Relay'].includes(type) ? 'High' : 'Medium'),
+    rul: options.rul ?? Math.max(1, site.rul - ((options.serial || 1) % 4) * 0.4),
+    inspections: [{ date: addDays(new Date().toISOString().slice(0, 10), -30), result: options.status === 'Attention' ? 'Action required' : 'Passed', type: 'Routine inspection' }],
+    failures: options.status === 'Attention' ? [{ date: addDays(new Date().toISOString().slice(0, 10), -8), event: 'Condition alert opened', state: 'Under review' }] : [],
+    calibration: type === 'BMS' || type === 'Energy Meter' ? { last: addDays(new Date().toISOString().slice(0, 10), -90), next: addDays(new Date().toISOString().slice(0, 10), 275), status: 'Current' } : null,
+    documents: [`${type} operation manual`, 'Commissioning certificate'],
+    photo: `${name} · demo equipment photo`,
   };
 }
 
@@ -52,19 +63,29 @@ function buildSiteAssets(site) {
   const container = makeAsset(site, 'CONT-01', 'Battery Container 01', 'Container', root.id, { parent: root, commissionedDate: addDays(site.commissionDate, 60), health: site.healthIndex - 2, warrantyYears: 10, serial: 2, nextServiceDays: 24 });
   const rack = makeAsset(site, 'CONT-01-RACK-02', 'Rack 02', 'Rack', container.id, { parent: container, commissionedDate: addDays(site.commissionDate, 90), health: site.id === 'BESS-JODHUR' ? 74 : site.healthIndex - 4, warrantyYears: 8, serial: 3, status: site.id === 'BESS-JODHUR' ? 'Attention' : 'Healthy', lastServiceDays: 76, nextServiceDays: 4 });
   const secondContainer = makeAsset(site, 'CONT-02', 'Battery Container 02', 'Container', root.id, { parent: root, commissionedDate: addDays(site.commissionDate, 120), health: site.healthIndex - 1, warrantyYears: 10, serial: 4, nextServiceDays: 40 });
+  const module = makeAsset(site, 'CONT-01-RACK-02-MOD-04', 'Module 04', 'Module', rack.id, { parent: rack, health: site.healthIndex - 6, serial: 13 });
+  const cell = makeAsset(site, 'CONT-01-RACK-02-MOD-04-CELL-07', 'Cell 07', 'Cell', module.id, { parent: module, health: site.id === 'BESS-JODHUR' ? 62 : site.healthIndex - 8, status: site.id === 'BESS-JODHUR' ? 'Attention' : 'Healthy', serial: 14, criticality: 'High' });
   return [
     root,
     container,
     rack,
+    module,
+    cell,
     secondContainer,
     makeAsset(site, 'BMS-01', 'Battery Management System', 'BMS', container.id, { parent: container, health: site.healthIndex - 3, warrantyYears: 6, serial: 5, nextServiceDays: 14, lastServiceDays: 33 }),
     makeAsset(site, 'PCS-01', 'Power Conversion System 1', 'PCS', root.id, { parent: root, health: site.healthIndex + 1, warrantyYears: 5, serial: 6, nextServiceDays: 45, lastServiceDays: 82 }),
     makeAsset(site, 'TRF-01', 'Main Transformer', 'Transformer', root.id, { parent: root, health: site.healthIndex, warrantyYears: 10, serial: 7, nextServiceDays: 90, lastServiceDays: 110 }),
     makeAsset(site, 'SWG-01', 'Main Switchgear', 'Switchgear', root.id, { parent: root, health: site.healthIndex + 2, warrantyYears: 8, serial: 8, nextServiceDays: 60, lastServiceDays: 170 }),
+    makeAsset(site, 'PR-01', 'Protection Relay', 'Protection Relay', root.id, { parent: root, serial: 15, warrantyYears: 6 }),
+    makeAsset(site, 'MTR-01', 'Revenue Energy Meter', 'Energy Meter', root.id, { parent: root, serial: 16, warrantyYears: 8 }),
     makeAsset(site, 'HVAC-01', 'HVAC Unit 1', 'HVAC', secondContainer.id, { parent: secondContainer, health: site.healthIndex - 2, warrantyYears: 5, serial: 9, nextServiceDays: 7, lastServiceDays: 27 }),
     makeAsset(site, 'HVAC-02', 'HVAC Unit 2', 'HVAC', secondContainer.id, { parent: secondContainer, health: site.id === 'BESS-JODHUR' ? 68 : site.healthIndex - 1, warrantyYears: 5, serial: 10, nextServiceDays: 2, lastServiceDays: 55, status: site.id === 'BESS-JODHUR' ? 'Attention' : 'Healthy' }),
     makeAsset(site, 'FIRE-01', 'Fire Detection & Suppression', 'Fire System', root.id, { parent: root, health: site.id === 'BESS-JODHUR' ? 72 : 96, warrantyYears: 5, serial: 11, nextServiceDays: 1, lastServiceDays: 31, status: site.id === 'BESS-JODHUR' ? 'Attention' : 'Healthy' }),
     makeAsset(site, 'GW-01', 'Edge Gateway', 'Gateway', root.id, { parent: root, health: site.commsStatus === 'Offline' ? 0 : 98, warrantyYears: 4, serial: 12, nextServiceDays: 80, lastServiceDays: 15, status: site.commsStatus === 'Offline' ? 'Offline' : 'Healthy' }),
+    makeAsset(site, 'UPS-01', 'Control UPS', 'UPS', root.id, { parent: root, serial: 17, warrantyYears: 5 }),
+    makeAsset(site, 'NET-01', 'Industrial Network Switch', 'Network Equipment', root.id, { parent: root, serial: 18, warrantyYears: 4 }),
+    makeAsset(site, 'SENS-01', 'Environmental Sensor Array', 'Sensor', root.id, { parent: root, serial: 19, warrantyYears: 3 }),
+    makeAsset(site, 'AUX-01', 'Auxiliary Power Panel', 'Auxiliary Power', root.id, { parent: root, serial: 20, warrantyYears: 6 }),
   ];
 }
 
@@ -80,6 +101,7 @@ export default function AssetRegistry() {
   const [query, setQuery] = useState(() => searchParams.get('query') || '');
   const [typeFilter, setTypeFilter] = useState('All');
   const [selectedAssetId, setSelectedAssetId] = useState(selectedSite?.id || '');
+  const [barcodeOpen, setBarcodeOpen] = useState(false);
   const assets = useMemo(() => buildSiteAssets(selectedSite), [selectedSite]);
   const selectedAsset = assets.find((asset) => asset.id === selectedAssetId) || assets[0];
   useEffect(() => setSelectedAssetId(selectedSite?.id || ''), [selectedSite?.id]);
@@ -117,10 +139,11 @@ export default function AssetRegistry() {
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-[760px] text-xs">
-              <thead><tr className="border-b border-slate-200 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-800"><th className="pb-3">Asset / hierarchy</th><th className="pb-3">Health</th><th className="pb-3">Status</th><th className="pb-3">Commissioned</th><th className="pb-3">Warranty expiry</th><th className="pb-3">Details</th></tr></thead>
+              <thead><tr className="border-b border-slate-200 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-800"><th className="pb-3">Asset / hierarchy</th><th className="pb-3">Type</th><th className="pb-3">Health / criticality</th><th className="pb-3">Status</th><th className="pb-3">Commissioned</th><th className="pb-3">Warranty expiry</th><th className="pb-3">Details</th></tr></thead>
               <tbody>{filteredAssets.map((asset) => <tr key={asset.id} className={`border-b border-slate-100 dark:border-slate-800 ${selectedAsset?.id === asset.id ? 'bg-cyan-500/[0.04]' : ''}`}>
                 <td className="py-3"><button type="button" onClick={() => setSelectedAssetId(asset.id)} className="text-left"><span className="font-semibold text-slate-900 dark:text-white">{asset.name}</span><span className="mt-0.5 block font-mono text-[10px] text-slate-400">{asset.id}</span><span className="mt-1 block text-[10px] text-slate-400">{asset.hierarchy.slice(0, -1).join(' / ') || 'Fleet'}</span></button></td>
-                <td className="py-3 font-bold tabular-nums">{asset.health}/100</td>
+                <td className="py-3 text-[10px]">{asset.type}</td>
+                <td className="py-3"><strong className="tabular-nums">{asset.health}/100</strong><span className="mt-1 block text-[9px] text-slate-500">{asset.criticality} criticality</span></td>
                 <td className="py-3"><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${['Attention', 'Offline', 'Fault'].includes(asset.status) ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}`}>{asset.status}</span></td>
                 <td className="py-3 whitespace-nowrap">{formatDate(asset.commissionedDate)}</td>
                 <td className="py-3 whitespace-nowrap">{formatDate(asset.warrantyExpiry)}</td>
@@ -151,6 +174,15 @@ export default function AssetRegistry() {
             ].map(([label, value, Icon]) => <div key={label} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60"><p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide text-slate-500"><Icon className="h-3 w-3" />{label}</p><p className="mt-1 truncate text-xs font-semibold text-slate-800 dark:text-slate-200">{value}</p></div>)}
           </div>
           <p className="mt-3 text-[10px] text-slate-500">Serial number <span className="ml-1 font-mono text-slate-700 dark:text-slate-300">{selectedAsset.serialNumber}</span></p>
+          <button type="button" onClick={() => setBarcodeOpen((open) => !open)} className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-cyan-700 dark:text-cyan-300"><Barcode className="h-3.5 w-3.5" />{barcodeOpen ? 'Hide asset code' : 'Show QR / barcode'}</button>
+          {barcodeOpen && <div className="mt-3 flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950"><div aria-label={`Demo barcode for ${selectedAsset.id}`} className="flex h-12 items-stretch gap-[2px] bg-white px-2 py-1">{Array.from({ length: 32 }, (_, index) => <span key={index} className={`${(selectedAsset.id.charCodeAt(index % selectedAsset.id.length) + index) % 3 ? 'w-[2px]' : 'w-[4px]'} bg-slate-900`} />)}</div><div><p className="font-mono text-[10px] font-bold">{selectedAsset.id}</p><p className="mt-1 text-[9px] text-slate-500">Illustrative scannable-asset placeholder</p></div></div>}
+          <div className="mt-4 grid grid-cols-2 gap-3 text-[10px]">
+            {[['Model', selectedAsset.modelNumber], ['Firmware', selectedAsset.firmware], ['Manufactured', formatDate(selectedAsset.manufactureDate)], ['Design life', `${selectedAsset.designLifeYears} years`], ['Estimated RUL', `${selectedAsset.rul.toFixed(1)} years`], ['GPS', `${selectedSite?.lat}°, ${selectedSite?.lng}°`]].map(([label, value]) => <div key={label} className="rounded-lg bg-slate-50 p-2.5 dark:bg-slate-800/60"><p className="uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 font-semibold text-slate-800 dark:text-slate-200">{value}</p></div>)}
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><h3 className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Inspection / failure history</h3>{selectedAsset.inspections.map((record) => <p key={record.date} className="mt-2 text-[10px] text-slate-700 dark:text-slate-300">{formatDate(record.date)} · {record.type}: {record.result}</p>)}{selectedAsset.failures.map((record) => <p key={record.date} className="mt-2 text-[10px] text-amber-700 dark:text-amber-300">{formatDate(record.date)} · {record.event} ({record.state})</p>)}{selectedAsset.calibration && <p className="mt-2 text-[10px] text-slate-600 dark:text-slate-300">Calibration: {formatDate(selectedAsset.calibration.last)} · next {formatDate(selectedAsset.calibration.next)}</p>}</div>
+            <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><h3 className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Documents and photo</h3>{selectedAsset.documents.map((document) => <p key={document} className="mt-2 text-[10px] text-cyan-700 dark:text-cyan-300">▤ {document}</p>)}<p className="mt-2 text-[10px] text-slate-500">▧ {selectedAsset.photo}</p></div>
+          </div>
           <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-800">
             <div className="mb-3 flex items-center justify-between gap-2"><h3 className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white"><History className="h-4 w-4 text-cyan-500" />Maintenance history</h3><span className="text-[10px] text-slate-400">{historyOrders.length} records</span></div>
             {historyOrders.length ? <div className="space-y-2">{historyOrders.slice(0, 4).map((order) => <div key={order.id} className="rounded-lg border border-slate-200 p-3 dark:border-slate-800"><div className="flex items-center justify-between gap-2"><span className="font-mono text-[10px] font-bold text-cyan-700 dark:text-cyan-300">{order.id}</span><span className="text-[10px] text-slate-400">{formatDate(order.dueDate)}</span></div><p className="mt-1 text-[11px] font-semibold text-slate-800 dark:text-slate-200">{order.description}</p><p className="mt-1 text-[10px] text-slate-500">{order.type} · {order.status || 'Scheduled'} · {order.assignee || 'Unassigned'}</p></div>)}</div> : <p className="rounded-lg bg-slate-50 p-3 text-[11px] text-slate-500 dark:bg-slate-800/60">No maintenance records are linked to this asset yet.</p>}

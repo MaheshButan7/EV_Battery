@@ -19,6 +19,9 @@ const Executive = lazy(() => import('../pages/Executive'));
 const Reports = lazy(() => import('../pages/Reports'));
 const Administration = lazy(() => import('../pages/Administration'));
 const AssetRegistry = lazy(() => import('../pages/AssetRegistry'));
+const DashboardStudio = lazy(() => import('../pages/DashboardStudio'));
+const HelpSupport = lazy(() => import('../pages/HelpSupport'));
+const FieldMode = lazy(() => import('../pages/FieldMode'));
 
 function RouteLoading() {
   return (
@@ -52,6 +55,9 @@ export default function AppRoutes() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/admin" element={<Administration />} />
         <Route path="/assets" element={<AssetRegistry />} />
+        <Route path="/dashboard-studio" element={<DashboardStudio />} />
+        <Route path="/help-support" element={<HelpSupport />} />
+        <Route path="/field-mode" element={<FieldMode />} />
       </Routes>
     </Suspense>
   );

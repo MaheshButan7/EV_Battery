@@ -24,7 +24,12 @@ const initialParts = [
   { id: 'SP-022', name: 'Fire panel sensor', category: 'Safety', stock: 18, reserved: 0, minimum: 5, location: 'Central Store', siteId: null },
   { id: 'SP-023', name: 'Fire system backup battery', category: 'Safety', stock: 11, reserved: 2, minimum: 6, location: 'Central Store', siteId: null },
   { id: 'SP-024', name: 'Thermal sensor harness', category: 'Controls', stock: 3, reserved: 0, minimum: 4, location: 'Central Store', siteId: null },
-];
+].map((part, index) => ({
+  ...part,
+  compatibleAssetTypes: part.category === 'HVAC' ? ['HVAC'] : part.category === 'Safety' ? ['Fire System', 'Sensor'] : part.category === 'Battery' ? ['Cell', 'Module', 'Rack'] : part.category === 'Communications' ? ['Gateway', 'Network Equipment'] : ['BMS', 'PCS', 'Switchgear'],
+  supplier: ['Enerteck Spares', 'GridStore Supply', 'Axiom Industrial'][index % 3],
+  leadTimeDays: [5, 12, 18, 7][index % 4],
+}));
 
 const defaultChecklist = (completed = 0) => [
   { id: 'review', label: 'Review permit and isolation requirements', done: completed > 0 },
@@ -320,6 +325,13 @@ export function DemoDataProvider({ children }) {
     addEvent({ type: 'Work order assigned', workOrderId, siteId: workOrder.siteId, assignee, actor: user });
   };
 
+  const updateWorkOrderDetails = (workOrderId, changes, user = 'Demo Operator') => {
+    const workOrder = workOrders.find((item) => item.id === workOrderId);
+    if (!workOrder) return;
+    setWorkOrders((current) => current.map((item) => item.id === workOrderId ? { ...item, ...changes } : item));
+    addEvent({ type: 'Work order details updated', workOrderId, siteId: workOrder.siteId, fields: Object.keys(changes), actor: user });
+  };
+
   const updateWorkOrderChecklist = (workOrderId, checklistItemId, done, user = 'Demo Operator') => {
     const workOrder = workOrders.find((item) => item.id === workOrderId);
     if (!workOrder) return;
@@ -397,6 +409,7 @@ export function DemoDataProvider({ children }) {
     createManualWorkOrder,
     updateWorkOrderStatus,
     assignWorkOrder,
+    updateWorkOrderDetails,
     updateWorkOrderChecklist,
     reservePartForWorkOrder,
     updatePermit,

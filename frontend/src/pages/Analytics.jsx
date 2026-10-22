@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Activity, Battery, Gauge, Zap } from 'lucide-react';
+import { Activity, Battery, Gauge, Sparkles, Zap } from 'lucide-react';
 import PageFrame from '../components/ui/PageFrame';
 import ChartCard from '../components/ChartCard';
 import { useDemoData } from '../hooks/useDemoData';
@@ -136,6 +136,22 @@ export default function Analytics() {
   }
 
   const activeSiteAlarms = activeAlarms.filter((alarm) => alarm.siteId === selectedSite.id).length;
+  const causeGroups = useMemo(() => {
+    const groups = new Map();
+    activeAlarms.forEach((alarm) => {
+      const title = alarm.title || 'Unclassified alarm';
+      const cause = /temp|thermal|cool/i.test(title) ? 'Thermal management / cooling'
+        : /voltage|imbalance|soc/i.test(title) ? 'Battery electrical balance'
+          : /gateway|communication|packet/i.test(title) ? 'Site communications'
+            : /fire|smoke|gas/i.test(title) ? 'Safety system condition'
+              : 'Equipment condition / controls';
+      const current = groups.get(cause) || { cause, count: 0, examples: [] };
+      current.count += 1;
+      if (current.examples.length < 2) current.examples.push(title);
+      groups.set(cause, current);
+    });
+    return [...groups.values()].sort((a, b) => b.count - a.count);
+  }, [activeAlarms]);
   const metrics = [
     { label: 'Availability', value: `${selectedSite.availability.toFixed(1)}%`, Icon: Activity, note: 'Current site value · target 99%' },
     { label: 'Round-trip efficiency', value: `${selectedSite.roundTripEfficiency.toFixed(1)}%`, Icon: Gauge, note: 'Current site value' },
@@ -227,6 +243,26 @@ export default function Analytics() {
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
+
+      <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900" aria-label="AI-generated operational insights">
+        <div className="flex items-start gap-3">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-500" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">AI-generated operational insights</h2>
+            <p className="mt-1 text-[10px] text-slate-500">Illustrative insights based on synthetic demo data · verify against site records before acting.</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Performance</p><p className="mt-2 text-xs text-slate-700 dark:text-slate-200">{selectedSite.availability < 99 ? 'Availability is below the 99% reference target; review active alarms and recent outages.' : 'Availability is tracking above the 99% reference target.'}</p></div>
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Battery outlook</p><p className="mt-2 text-xs text-slate-700 dark:text-slate-200">Illustrative SOH projection indicates {selectedSite.soh < 90 ? 'degradation warrants a capacity and maintenance review.' : 'no immediate capacity threshold crossing in the demo outlook.'}</p></div>
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Operations</p><p className="mt-2 text-xs text-slate-700 dark:text-slate-200">{activeSiteAlarms ? `${activeSiteAlarms} active alarm${activeSiteAlarms === 1 ? '' : 's'} may affect performance; investigate alarm history for likely causes.` : 'No active alarms at this site in the demo data.'}</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]" aria-label="Fleet reliability and root cause analytics">
+        <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><div className="mb-4"><h2 className="text-sm font-bold text-slate-900 dark:text-white">Fleet reliability and utilization</h2><p className="mt-1 text-[10px] text-slate-500">Current site indicators · utilization is estimated from instantaneous power / installed capacity.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[560px] text-xs"><thead><tr className="border-b border-slate-200 text-left text-[9px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-800"><th className="pb-3">Site</th><th className="pb-3">Availability</th><th className="pb-3">Utilization</th><th className="pb-3">SOH</th><th className="pb-3">Active alarms</th></tr></thead><tbody>{accessibleSites.map((site) => <tr key={site.id} className="border-b border-slate-100 dark:border-slate-800"><td className="py-3 font-semibold">{site.name.replace(/ (Grid Storage|Desert BESS|Coastal BESS|Industrial BESS)$/i, '')}</td><td className="py-3">{site.availability.toFixed(1)}%</td><td className="py-3">{(Math.abs(site.powerMW) / Math.max(site.capacityMW, 1) * 100).toFixed(0)}%</td><td className="py-3">{site.soh.toFixed(1)}%</td><td className="py-3">{activeAlarms.filter((alarm) => alarm.siteId === site.id).length}</td></tr>)}</tbody></table></div></div>
+        <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><h2 className="text-sm font-bold text-slate-900 dark:text-white">Alarm patterns and likely causes</h2><p className="mt-1 text-[10px] text-slate-500">Rule-based grouping of simulated alarm titles; treat as investigation prompts, not confirmed root cause.</p><div className="mt-4 space-y-3">{causeGroups.map((group) => <div key={group.cause} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex items-center justify-between gap-2"><h3 className="text-xs font-semibold">{group.cause}</h3><span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-700 dark:text-amber-300">{group.count} active</span></div><p className="mt-1 text-[10px] text-slate-500">Examples: {group.examples.join(' · ')}</p></div>)}{causeGroups.length === 0 && <p className="rounded-lg bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-300">No active alarm patterns to review.</p>}</div></div>
+      </section>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] p-4 text-xs">
         <span className="text-slate-700 dark:text-slate-200">Performance, health history, projections, and energy profiles provide a unified operational view.</span>

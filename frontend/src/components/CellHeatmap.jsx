@@ -31,6 +31,8 @@ export default function CellHeatmap({ containers = [], siteId }) {
       if (cell.internalResistance >= 0.26) return 'elevated';
       return 'normal';
     }
+    if (m === 'balance') return cell.balancingStatus === 'Review' ? 'warning' : 'normal';
+    if (m === 'health') return cell.isAnomalous ? 'warning' : cell.voltage < 3.22 ? 'elevated' : 'normal';
     return 'normal';
   };
 
@@ -45,6 +47,8 @@ export default function CellHeatmap({ containers = [], siteId }) {
     if (metric === 'temperature') return `${cell.temperature.toFixed(1)}°`;
     if (metric === 'voltage') return `${cell.voltage.toFixed(3)}`;
     if (metric === 'internalResistance') return `${cell.internalResistance.toFixed(3)}`;
+    if (metric === 'balance') return cell.balancingStatus === 'Review' ? 'Review' : 'OK';
+    if (metric === 'health') return cell.isAnomalous ? 'Risk' : 'OK';
     return '';
   };
 
@@ -102,6 +106,8 @@ export default function CellHeatmap({ containers = [], siteId }) {
             { key: 'temperature', icon: Flame, iconClass: 'text-amber-500', label: 'Temperature' },
             { key: 'voltage', icon: Zap, iconClass: 'text-cyan-500', label: 'Voltage' },
             { key: 'internalResistance', icon: Activity, iconClass: 'text-emerald-500', label: 'IR (mΩ)' },
+            { key: 'balance', icon: Activity, iconClass: 'text-violet-500', label: 'Balancing' },
+            { key: 'health', icon: AlertTriangle, iconClass: 'text-rose-500', label: 'Health / risk' },
           ].map(({ key, icon: Icon, iconClass, label }) => (
             <button
               key={key}
@@ -134,7 +140,9 @@ export default function CellHeatmap({ containers = [], siteId }) {
               <div className="flex items-center gap-4 font-mono text-slate-700 dark:text-slate-300">
                 <span>V: <strong className="text-cyan-600 dark:text-cyan-400">{formatVoltage(hoveredCell.voltage)}</strong></span>
                 <span>T: <strong className="text-amber-600 dark:text-amber-400">{formatTemperature(hoveredCell.temperature)}</strong></span>
+                <span>SOC: <strong>{hoveredCell.soc?.toFixed(1) ?? '—'}%</strong></span>
                 <span>IR: <strong className="text-emerald-600 dark:text-emerald-400">{hoveredCell.internalResistance.toFixed(3)} mΩ</strong></span>
+                <span>Balance: <strong>{hoveredCell.balancingStatus || '—'}</strong></span>
               </div>
             </div>
             {hoveredCell.anomaly && (
@@ -151,7 +159,7 @@ export default function CellHeatmap({ containers = [], siteId }) {
         )}
       </div>
 
-      {/* 8 Modules × 12 Cells Grid */}
+      {/* Ten modules × 50 cells are shown for the selected rack. */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {rack.modules.map((module) => (
           <div key={module.id} className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -191,7 +199,7 @@ export default function CellHeatmap({ containers = [], siteId }) {
             <button type="button" onClick={() => setSelectedCell(null)} className="rounded-lg px-2 py-1 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">Close</button>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            {[['Voltage', formatVoltage(selectedCell.voltage)], ['Temperature', formatTemperature(selectedCell.temperature)], ['Internal resistance', `${selectedCell.internalResistance.toFixed(3)} mΩ`], ['Health score', selectedCell.isAnomalous ? 'At risk' : 'Normal']].map(([label, value]) => <div key={label} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><p className="text-[10px] uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{value}</p></div>)}
+            {[['Voltage', formatVoltage(selectedCell.voltage)], ['Temperature', formatTemperature(selectedCell.temperature)], ['State of charge', `${selectedCell.soc?.toFixed(1) ?? '—'}%`], ['Internal resistance', `${selectedCell.internalResistance.toFixed(3)} mΩ`], ['Balancing state', selectedCell.balancingStatus || '—'], ['Health / risk', selectedCell.isAnomalous ? 'At risk' : 'Normal']].map(([label, value]) => <div key={label} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><p className="text-[10px] uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 text-sm font-bold text-slate-900 dark:text-white">{value}</p></div>)}
           </div>
           {selectedCell.anomaly ? <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-800 dark:text-amber-200"><p className="font-bold">Prediction · {selectedCell.anomaly.modelConfidence} confidence</p><p className="mt-1">{selectedCell.anomaly.issue} in approximately {selectedCell.anomaly.daysRemaining} days.</p><p className="mt-2">{selectedCell.anomaly.action}</p></div> : <div className="mt-4 rounded-xl bg-emerald-500/10 p-4 text-xs text-emerald-700 dark:text-emerald-300">No current anomaly detected for this cell.</div>}
           <div className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-800"><h4 className="text-xs font-bold text-slate-900 dark:text-white">Investigation actions</h4><p className="mt-1 text-[11px] text-slate-500">Review historical charts and alarm records before creating an inspection task.</p><button type="button" onClick={() => createManualWorkOrder({ siteId, assetId: selectedCell.id, description: selectedCell.anomaly?.issue || `Inspect ${selectedCell.id}`, priority: selectedCell.anomaly?.priority || 'Minor', type: selectedCell.anomaly ? 'Predictive' : 'Condition-based' })} className="mt-4 w-full rounded-lg bg-cyan-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-cyan-700">Create inspection work order</button></div>

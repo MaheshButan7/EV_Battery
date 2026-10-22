@@ -15,7 +15,9 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Battery,
+  CalendarDays,
   CircleDollarSign,
+  Download,
   Gauge,
   ShieldCheck,
   Zap,
@@ -54,7 +56,7 @@ export default function Executive() {
   const topRisks = useMemo(() => [...activeAlarms]
     .filter((alarm) => !['Info', 'Information'].includes(alarm.priority))
     .sort((a, b) => (priorityOrder[a.priority] ?? 5) - (priorityOrder[b.priority] ?? 5))
-    .slice(0, 3), [activeAlarms]);
+    .slice(0, 5), [activeAlarms]);
 
   const values = [
     average(accessibleSites.map((site) => site.availability)),
@@ -76,6 +78,12 @@ export default function Executive() {
   const atRiskSites = accessibleSites.filter((site) => site.riskLevel === 'High').length;
   const leadRisk = topRisks[0];
   const leadRiskSite = leadRisk ? siteById.get(leadRisk.siteId) : null;
+  const lifecycleOutlook = accessibleSites.map((site) => {
+    const commissioned = new Date(`${site.commissionDate}T00:00:00`);
+    const warranty = new Date(commissioned);
+    warranty.setFullYear(warranty.getFullYear() + 5);
+    return { site, warranty, remainingLife: site.rul };
+  }).sort((a, b) => a.warranty - b.warranty);
 
   return (
     <PageFrame
@@ -120,6 +128,7 @@ export default function Executive() {
                       <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${alarm.priority === 'Critical' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'}`}>{alarm.priority}</span>
                     </div>
                     <p className="mt-1 text-[11px] leading-4 text-slate-500">{alarm.description}</p>
+                    <p className="mt-1 text-[10px] text-slate-500">Owner: {alarm.updatedBy || (alarm.priority === 'Critical' ? 'Control Room Operator' : 'Reliability Manager')} · Next action: investigate alarm history and confirm field response.</p>
                     {site && <Link to={`/site/${site.id}`} onClick={() => selectSite(site.id)} className="mt-1.5 inline-block text-[10px] font-semibold text-cyan-700 hover:underline dark:text-cyan-300">{site.name} · Review site</Link>}
                   </div>
                 </div>
@@ -141,6 +150,11 @@ export default function Executive() {
           <div className="mt-5 flex flex-wrap gap-2">
           </div>
         </div>
+      </section>
+
+      <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900" aria-label="Warranty and end-of-life outlook">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h2 className="flex items-center gap-2 text-sm font-bold"><CalendarDays className="h-4 w-4 text-cyan-500" />Warranty and end-of-life outlook</h2><p className="mt-1 text-[10px] text-slate-500">Illustrative lifecycle estimate from commissioning date and current demo RUL values.</p></div><button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-lg bg-cyan-600 px-3 py-2 text-[11px] font-semibold text-white hover:bg-cyan-700"><Download className="h-3.5 w-3.5" />Print / save executive report</button></div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{lifecycleOutlook.map(({ site, warranty, remainingLife }) => <div key={site.id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><p className="text-xs font-bold">{site.name}</p><p className="mt-2 text-[10px] text-slate-500">Illustrative warranty end: <strong className="text-slate-700 dark:text-slate-300">{warranty.toLocaleDateString([], { month: 'short', year: 'numeric' })}</strong></p><p className="mt-1 text-[10px] text-slate-500">Estimated RUL: <strong className="text-slate-700 dark:text-slate-300">{remainingLife.toFixed(1)} years</strong></p><p className="mt-1 text-[10px] text-slate-500">Risk owner: <strong className="text-slate-700 dark:text-slate-300">{site.riskLevel === 'High' ? 'Reliability Manager' : 'Asset Manager'}</strong></p></div>)}</div>
       </section>
 
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-2" aria-label="Fleet performance trends">

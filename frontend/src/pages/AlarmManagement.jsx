@@ -36,6 +36,11 @@ export default function AlarmManagement() {
     alarms,
     events,
     acknowledgeAlarm,
+    shelveAlarm,
+    suppressAlarm,
+    escalateAlarm,
+    correlateAlarm,
+    updateAlarmState,
     createWorkOrderFromAlarm,
   } = useDemoData();
   const [filter, setFilter] = useState('All');
@@ -56,6 +61,16 @@ export default function AlarmManagement() {
     () => events.filter((event) => event.siteId === selectedSite?.id),
     [events, selectedSite],
   );
+  const alarmKpis = useMemo(() => {
+    const acknowledgementTimes = alarms.filter((alarm) => alarm.acknowledgedAt).map((alarm) => Math.max(1, Math.round((new Date(alarm.acknowledgedAt) - new Date(alarm.timestamp)) / 60000)));
+    const titles = alarms.reduce((counts, alarm) => ({ ...counts, [alarm.title]: (counts[alarm.title] || 0) + 1 }), {});
+    return {
+      active: alarms.filter((alarm) => alarm.state === 'Active').length,
+      meanAck: acknowledgementTimes.length ? Math.round(acknowledgementTimes.reduce((sum, value) => sum + value, 0) / acknowledgementTimes.length) : 4,
+      meanClear: 38,
+      repeats: Object.values(titles).filter((count) => count > 1).length,
+    };
+  }, [alarms]);
 
   return (
     <PageFrame
@@ -78,6 +93,15 @@ export default function AlarmManagement() {
           </button>
         ))}
       </div>
+
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Alarm performance indicators">
+        {[
+          ['Active alarms', alarmKpis.active, 'Current selected site'],
+          ['Mean acknowledge time', `${alarmKpis.meanAck} min`, 'Illustrative demo KPI'],
+          ['Mean clear time', `${alarmKpis.meanClear} min`, 'Illustrative demo KPI'],
+          ['Repeated patterns', alarmKpis.repeats, 'Alarm titles seen more than once'],
+        ].map(([label, value, detail]) => <div key={label} className="surface-card rounded-xl border bg-white p-4 dark:bg-slate-900"><p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{label}</p><p className="mt-2 text-xl font-bold tabular-nums">{value}</p><p className="mt-1 text-[10px] text-slate-500">{detail}</p></div>)}
+      </section>
 
       <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900" aria-label="Site alarms">
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_repeat(3,minmax(150px,190px))]">
@@ -113,11 +137,20 @@ export default function AlarmManagement() {
                       <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase ${style.badge}`}>{alarm.priority}</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{alarm.description}</p>
-                    <p className="mt-1 font-mono text-[10px] text-slate-400">{alarm.id} · {alarm.state} · {formatAlarmTime(alarm.timestamp)}{alarm.equipment ? ` · ${alarm.equipment}` : ''}</p>
+                    <p className="mt-1 font-mono text-[10px] text-slate-400">{alarm.id} · {alarm.state} · {formatAlarmTime(alarm.timestamp)}{alarm.equipment ? ` · ${alarm.equipment}` : ''}{alarm.updatedBy ? ` · Owner: ${alarm.updatedBy}` : ''}</p>
+                    {alarm.shelvedUntil && <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300">Shelved until {formatAlarmTime(alarm.shelvedUntil)}</p>}
+                    {alarm.suppressionReason && <p className="mt-1 text-[10px] text-slate-500">Suppression reason: {alarm.suppressionReason}</p>}
+                    {alarm.escalatedTo && <p className="mt-1 text-[10px] text-rose-600 dark:text-rose-300">Escalated to {alarm.escalatedTo}</p>}
+                    {alarm.correlatedTo && <p className="mt-1 text-[10px] text-violet-600 dark:text-violet-300">Correlated with {alarm.correlatedTo}</p>}
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">
                   {alarm.state === 'Active' && <Button size="sm" variant="success" icon={Check} onClick={() => acknowledgeAlarm(alarm.id)}>Acknowledge</Button>}
+                  {!['Cleared', 'Shelved'].includes(alarm.state) && <Button size="sm" variant="secondary" onClick={() => shelveAlarm(alarm.id, 60)}>Shelve 1h</Button>}
+                  {!['Cleared', 'Suppressed'].includes(alarm.state) && <Button size="sm" variant="secondary" onClick={() => suppressAlarm(alarm.id, 'Suppressed for operator investigation')}>Suppress</Button>}
+                  {!['Cleared', 'Escalated'].includes(alarm.state) && <Button size="sm" variant="secondary" onClick={() => escalateAlarm(alarm.id, 'Reliability Manager')}>Escalate</Button>}
+                  {alarm.state !== 'Cleared' && <Button size="sm" variant="subtle" onClick={() => updateAlarmState(alarm.id, 'Cleared')}>Clear</Button>}
+                  {!alarm.correlatedTo && alarms.length > 1 && <select aria-label={`Correlate ${alarm.id} with another alarm`} defaultValue="" onChange={(event) => { if (event.target.value) correlateAlarm(alarm.id, event.target.value); }} className="max-w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[10px] dark:border-slate-700 dark:bg-slate-900"><option value="">Correlate…</option>{alarms.filter((item) => item.id !== alarm.id && !item.correlatedTo).map((item) => <option key={item.id} value={item.id}>{item.id}</option>)}</select>}
                   {alarm.workOrderId ? (
                     <Button size="sm" variant="subtle" icon={ClipboardPlus} disabled title={`Work order ${alarm.workOrderId} is already linked`}>Work order added</Button>
                   ) : (

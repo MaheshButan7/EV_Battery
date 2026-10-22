@@ -14,6 +14,8 @@ import {
   FileBarChart,
   Briefcase,
   Settings,
+  HelpCircle,
+  Smartphone,
 } from 'lucide-react';
 
 export const navigationGroups = [
@@ -47,6 +49,7 @@ export const navigationGroups = [
     items: [
       { id: 'maintenance', name: 'Maintenance & CMMS', path: '/maintenance', icon: Wrench },
       { id: 'permits', name: 'Permit-to-Work', path: '/maintenance/permits', icon: ShieldAlert },
+      { id: 'field-mode', name: 'Field Mode', path: '/field-mode', icon: Smartphone },
       { id: 'inventory', name: 'Inventory', path: '/inventory', icon: Package },
     ],
   },
@@ -57,12 +60,14 @@ export const navigationGroups = [
       { id: 'history', name: 'Historical Trends', path: '/history', icon: Activity },
       { id: 'reports', name: 'Reports', path: '/reports', icon: FileBarChart },
       { id: 'executive', name: 'Executive Reporting', path: '/executive', icon: Briefcase },
+      { id: 'dashboard-studio', name: 'Dashboard Studio', path: '/dashboard-studio', icon: LayoutDashboard },
     ],
   },
   {
     label: 'Administration',
     items: [
       { id: 'admin', name: 'Administration', path: '/admin', icon: Settings },
+      { id: 'help-support', name: 'Help & Support', path: '/help-support', icon: HelpCircle },
     ],
   },
 ];

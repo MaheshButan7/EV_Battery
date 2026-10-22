@@ -185,7 +185,7 @@ export default function Inventory() {
         <table className="w-full min-w-[850px] text-xs">
           <thead>
             <tr className="border-b border-slate-200 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-800">
-              <th className="pb-3">Part</th><th className="pb-3">Category</th><th className="pb-3">Location</th><th className="pb-3">On hand</th><th className="pb-3">Reserved</th><th className="pb-3">Available</th><th className="pb-3">Minimum</th><th className="pb-3">Status</th><th className="pb-3">Action</th>
+              <th className="pb-3">Part</th><th className="pb-3">Category / compatible assets</th><th className="pb-3">Location / supplier</th><th className="pb-3">On hand</th><th className="pb-3">Reserved</th><th className="pb-3">Available</th><th className="pb-3">Minimum</th><th className="pb-3">Lead time</th><th className="pb-3">Status</th><th className="pb-3">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -196,12 +196,13 @@ export default function Inventory() {
               return (
                 <tr key={part.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
                   <td className="py-3"><strong className="text-slate-800 dark:text-slate-200">{part.name}</strong><br /><span className="font-mono text-[10px] text-slate-400">{part.id}</span></td>
-                  <td className="py-3 text-slate-600 dark:text-slate-300">{part.category}</td>
-                  <td className="py-3 text-slate-600 dark:text-slate-300">{part.location}{part.siteId === null && <span className="mt-0.5 block text-[9px] text-cyan-700 dark:text-cyan-300">Shared store</span>}</td>
+                  <td className="py-3 text-slate-600 dark:text-slate-300">{part.category}<span className="mt-1 block max-w-40 text-[9px] text-slate-400">Fits {(part.compatibleAssetTypes || []).join(', ')}</span></td>
+                  <td className="py-3 text-slate-600 dark:text-slate-300">{part.location}<span className="mt-1 block text-[9px] text-slate-400">{part.supplier}{part.siteId === null && ' · Shared store'}</span></td>
                   <td className="py-3 tabular-nums">{part.stock}</td>
                   <td className="py-3 tabular-nums">{part.reserved}</td>
                   <td className={`py-3 font-semibold tabular-nums ${low ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'}`}>{available}</td>
                   <td className="py-3 tabular-nums">{part.minimum}</td>
+                  <td className="py-3 whitespace-nowrap text-slate-600 dark:text-slate-300">{part.leadTimeDays} days</td>
                   <td className={`py-3 font-semibold ${outOfStock ? 'text-rose-600 dark:text-rose-400' : low ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{outOfStock ? 'Out of stock' : low ? 'Reorder' : 'Healthy'}</td>
                   <td className="py-3"><Button size="sm" variant="subtle" disabled={part.stock <= part.reserved} onClick={() => reservePart(part.id)}>Reserve</Button></td>
                 </tr>

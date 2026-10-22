@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Clock3,
   HeartPulse,
+  Gauge,
+  Activity,
   Zap,
 } from 'lucide-react';
 import {
@@ -93,6 +95,7 @@ function Panel({ title, subtitle, action, children, className = '' }) {
 }
 
 export default function Overview() {
+  const [rankingMetric, setRankingMetric] = useState('healthIndex');
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const { accessibleSites, accessibleAlarms, selectSite } = useDemoData();
@@ -101,19 +104,29 @@ export default function Overview() {
   const capacityMW = accessibleSites.reduce((sum, site) => sum + site.capacityMW, 0);
   const fleetSoh = average(accessibleSites.map((site) => site.soh));
   const fleetAvailability = average(accessibleSites.map((site) => site.availability));
+  const fleetPower = accessibleSites.reduce((sum, site) => sum + site.powerMW, 0);
+  const fleetEnergy = accessibleSites.reduce((sum, site) => sum + site.energyTodayMWh, 0);
+  const fleetRte = average(accessibleSites.map((site) => site.roundTripEfficiency));
   const priorityAlarms = [...activeAlarms].sort((a, b) => (
     ({ Critical: 0, Major: 1, Warning: 2, Minor: 3, Info: 4 }[a.priority] ?? 5)
       - ({ Critical: 0, Major: 1, Warning: 2, Minor: 3, Info: 4 }[b.priority] ?? 5)
   )).slice(0, 4);
+  const rankingOptions = { healthIndex: 'Health score', availability: 'Availability', roundTripEfficiency: 'Round-trip efficiency', energyTodayMWh: 'Energy throughput' };
+  const rankedSites = [...accessibleSites].sort((a, b) => b[rankingMetric] - a[rankingMetric]);
 
   return (
     <PageFrame title="Fleet Overview" description="Fleet status, energy performance, site health, and priority alerts.">
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Fleet performance indicators">
         <MetricCard icon={Building2} iconClass="bg-emerald-500/10 text-emerald-600" label="Sites in fleet" value={`${onlineSites.length} / ${accessibleSites.length}`} detail="All registered demo sites" />
         <MetricCard icon={Zap} iconClass="bg-indigo-500/10 text-indigo-500" label="Installed capacity" value={`${capacityMW} MW`} detail="Across all four sites" />
+        <MetricCard icon={Zap} iconClass="bg-cyan-500/10 text-cyan-600" label="Fleet active power" value={`${fleetPower.toFixed(1)} MW`} detail="Net instantaneous output" />
+        <MetricCard icon={Battery} iconClass="bg-blue-500/10 text-blue-600" label="Stored energy" value={`${accessibleSites.reduce((sum, site) => sum + (site.soc / 100) * site.capacityMWh, 0).toFixed(1)} MWh`} detail="Estimated from SOC and capacity" />
         <MetricCard icon={Battery} iconClass="bg-emerald-500/10 text-emerald-600" label="Fleet state of charge" value={`${average(accessibleSites.map((site) => site.soc)).toFixed(1)}%`} detail="Mean across all sites" />
         <MetricCard icon={HeartPulse} iconClass="bg-purple-500/10 text-purple-500" label="Fleet state of health" value={`${fleetSoh.toFixed(1)}%`} detail="Mean across all sites" />
+        <MetricCard icon={Activity} iconClass="bg-amber-500/10 text-amber-600" label="Fleet availability" value={`${fleetAvailability.toFixed(1)}%`} detail="Mean across all sites · target 99%" />
+        <MetricCard icon={Gauge} iconClass="bg-violet-500/10 text-violet-600" label="Round-trip efficiency" value={`${fleetRte.toFixed(1)}%`} detail="Mean across all sites" />
         <MetricCard icon={AlertTriangle} iconClass="bg-rose-500/10 text-rose-500" label="Active fleet alarms" value={activeAlarms.length} detail="All sites · all severities" />
+        <MetricCard icon={Zap} iconClass="bg-teal-500/10 text-teal-600" label="Energy throughput" value={`${fleetEnergy.toFixed(1)} MWh`} detail="Delivered today across fleet" />
       </section>
 
       <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_1fr]" aria-label="Fleet trends and status">
@@ -151,6 +164,10 @@ export default function Overview() {
           </div>
         </Panel>
       </section>
+
+      <Panel title="Site ranking" subtitle="Compare sites by a selected operational KPI" action={<label className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-wide text-slate-500">Rank by<select value={rankingMetric} onChange={(event) => setRankingMetric(event.target.value)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium normal-case tracking-normal dark:border-slate-700 dark:bg-slate-900">{Object.entries(rankingOptions).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>}>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">{rankedSites.map((site, index) => <SiteLink key={site.id} site={site} selectSite={selectSite} className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 dark:border-slate-800"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-cyan-500/10 text-[10px] font-bold text-cyan-700 dark:text-cyan-300">{index + 1}</span><span className="min-w-0 flex-1"><span className="block truncate text-[10px] font-semibold">{site.name}</span><span className="mt-0.5 block text-[9px] text-slate-500">{rankingOptions[rankingMetric]}</span></span><strong className="text-xs">{rankingMetric === 'energyTodayMWh' ? `${site[rankingMetric].toFixed(1)} MWh` : `${site[rankingMetric].toFixed(1)}%`}</strong></SiteLink>)}</div>
+      </Panel>
 
       <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1.15fr_1fr]" aria-label="Fleet alarms and energy">
         <Panel title="Priority alarm queue" subtitle="Active and acknowledged items across the fleet" action={<Link to="/alarms" className="text-[10px] font-semibold text-cyan-700 dark:text-cyan-300">View all <ChevronRight className="inline h-3 w-3" /></Link>}>

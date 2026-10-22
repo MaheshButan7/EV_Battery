@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import AppRoutes from '../../app/routes';
 import { useDemoData } from '../../hooks/useDemoData';
+import ChatAssistant from '../ChatAssistant';
 
 export default function AppShell() {
   const [collapsed, setCollapsed] = useState(false);
@@ -38,6 +39,7 @@ export default function AppShell() {
           <AppRoutes />
         </main>
       </div>
+      <ChatAssistant />
     </div>
   );
 }
