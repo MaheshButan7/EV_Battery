@@ -8,7 +8,7 @@ export default function SohRing({ soh = 92 }) {
 
   let healthStatus = 'Excellent';
   let gradientFrom = '#10b981';
-  let gradientTo = '#06b6d4';
+  let gradientTo = 'var(--app-accent)';
   let textColor = 'text-emerald-500 dark:text-emerald-400';
 
   if (soh < 80) {

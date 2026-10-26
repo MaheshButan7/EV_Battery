@@ -38,7 +38,7 @@ function UserMenu({ collapsed, mobileOpen }) {
         aria-expanded={menuOpen}
         aria-label="User menu"
       >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-xs font-bold text-white shadow-sm">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-700 text-xs font-bold text-white">
           {user?.name?.[0] ?? 'U'}
         </div>
         {(!collapsed || mobileOpen) && (
@@ -79,13 +79,11 @@ export default function Sidebar({ collapsed, mobileOpen, setMobileOpen, currentS
   const activeAlarmCount = alarms.filter((alarm) => alarm.state === 'Active').length;
 
   const sidebarContent = (
-    <div className="flex h-full flex-col border-r border-slate-200/90 bg-[var(--app-nav)] transition-all duration-300 select-none dark:border-slate-800/90">
+    <div className="flex h-full flex-col border-r border-slate-200/90 bg-[var(--app-nav)] select-none dark:border-slate-800/90">
       {/* Brand Header */}
       <div className="flex h-[4.5rem] shrink-0 items-center justify-between border-b border-slate-200/90 px-4 dark:border-slate-800/90">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-cyan-500/20 bg-white p-1 shadow-sm dark:bg-slate-800">
-            <img src={companyLogo} alt="Logo" className="w-full h-full object-contain" />
-          </div>
+          <img src={companyLogo} alt="BESS Command Center" className="h-10 w-10 shrink-0 object-contain" />
           {(!collapsed || mobileOpen) && (
             <div className="flex flex-col min-w-0">
               <span className="truncate text-sm font-bold tracking-tight text-slate-950 dark:text-white">{PRODUCT_NAME}</span>
@@ -147,7 +145,7 @@ export default function Sidebar({ collapsed, mobileOpen, setMobileOpen, currentS
                   to={path}
                   title={collapsed && !mobileOpen ? item.name : undefined}
                   onClick={() => mobileOpen && setMobileOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all duration-150 ${
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-colors duration-150 ${
                     active
                       ? 'border border-cyan-500/20 bg-cyan-500/[0.09] font-semibold text-cyan-700 shadow-sm dark:bg-cyan-400/[0.10] dark:text-cyan-300'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white'
@@ -172,7 +170,7 @@ export default function Sidebar({ collapsed, mobileOpen, setMobileOpen, currentS
 
   return (
     <>
-      <aside className={`sticky top-0 z-30 hidden h-dvh shrink-0 transition-all duration-300 lg:block ${collapsed ? 'w-20' : 'w-64'}`}>
+      <aside className={`sticky top-0 z-30 hidden h-dvh shrink-0 transition-[width] duration-200 lg:block ${collapsed ? 'w-20' : 'w-64'}`}>
         {sidebarContent}
       </aside>
       {mobileOpen && (

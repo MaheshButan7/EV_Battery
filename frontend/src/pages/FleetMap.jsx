@@ -82,7 +82,7 @@ export default function FleetMap() {
       </section>
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3" aria-label="Fleet map metrics">
         <MetricCard icon={Cloud} iconClass="bg-emerald-500/10 text-emerald-600" label="Communications" value={`${healthySites}/${accessibleSites.length} healthy`} detail="Site link status" />
-        <MetricCard icon={Zap} iconClass="bg-indigo-500/10 text-indigo-500" label="Net active power" value={`${netPower.toFixed(1)} MW`} detail="Selected site scope" />
+        <MetricCard icon={Zap} iconClass="bg-blue-500/10 text-blue-500" label="Net active power" value={`${netPower.toFixed(1)} MW`} detail="Selected site scope" />
         <MetricCard icon={BatteryCharging} iconClass="bg-emerald-500/10 text-emerald-600" label="Energy today" value={`${energyToday.toFixed(1)} MWh`} detail="Sum across selected scope" />
       </section>
     </PageFrame>

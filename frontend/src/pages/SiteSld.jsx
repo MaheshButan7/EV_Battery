@@ -12,7 +12,7 @@ function SldNode({ icon: Icon, label, value, status = 'Normal', tone = 'emerald'
     cyan: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300',
   };
   return (
-    <button type="button" onClick={() => onSelect?.({ label, value, status, assetId })} className={`min-w-[150px] rounded-xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${tones[tone]}`}>
+    <button type="button" onClick={() => onSelect?.({ label, value, status, assetId })} className={`min-w-[150px] rounded-lg border p-4 text-left transition-colors ${tones[tone]}`}>
       <div className="flex items-center gap-2">
         <Icon className="h-4 w-4" />
         <span className="text-xs font-bold">{label}</span>

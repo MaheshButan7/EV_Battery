@@ -54,15 +54,13 @@ export default function Login() {
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 transition-colors">
       {/* Left Brand Panel */}
-      <div className="hidden lg:flex flex-col justify-between w-[45%] p-12 bg-gradient-to-br from-slate-900 via-slate-800 to-cyan-950 relative overflow-hidden">
+      <div className="hidden lg:flex flex-col justify-between w-[45%] p-12 bg-slate-900 relative overflow-hidden">
         {/* Background decorative circles */}
         <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-cyan-500/5 pointer-events-none" />
         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-emerald-500/5 pointer-events-none" />
 
         <div className="flex items-center gap-3 relative z-10">
-          <div className="w-10 h-10 rounded-xl bg-white/10 p-1.5 backdrop-blur-sm border border-white/10 overflow-hidden shrink-0">
-            <img src={companyLogo} alt="Logo" className="w-full h-full object-contain" />
-          </div>
+          <img src={companyLogo} alt="BESS Command Center" className="h-10 w-10 shrink-0 object-contain" />
           <span className="font-bold text-base text-white">{PRODUCT_NAME}</span>
         </div>
 
@@ -74,7 +72,7 @@ export default function Login() {
             </div>
             <h1 className="text-4xl xl:text-5xl font-black text-white leading-[1.08] tracking-tight max-w-lg">
               See every site.<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
+              <span className="text-cyan-300">
                 Stay ahead.
               </span>
             </h1>
@@ -94,9 +92,7 @@ export default function Login() {
         {/* Top bar with theme toggle */}
         <div className="flex items-center justify-between px-6 py-4 lg:px-12">
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 overflow-hidden">
-              <img src={companyLogo} alt="Logo" className="w-full h-full object-contain" />
-            </div>
+            <img src={companyLogo} alt="BESS Command Center" className="h-8 w-8 shrink-0 object-contain" />
             <span className="font-bold text-sm text-slate-900 dark:text-white">{PRODUCT_NAME}</span>
           </div>
           <div className="ml-auto">
@@ -172,7 +168,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-sm font-bold transition-all shadow-md shadow-cyan-500/20 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-2.5 rounded-lg bg-cyan-700 hover:bg-cyan-800 text-white text-sm font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500/50 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? 'Signing in…' : 'Sign in'}
               </button>

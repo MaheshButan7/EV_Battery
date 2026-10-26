@@ -141,7 +141,7 @@ export default function AlarmManagement() {
                     {alarm.shelvedUntil && <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300">Shelved until {formatAlarmTime(alarm.shelvedUntil)}</p>}
                     {alarm.suppressionReason && <p className="mt-1 text-[10px] text-slate-500">Suppression reason: {alarm.suppressionReason}</p>}
                     {alarm.escalatedTo && <p className="mt-1 text-[10px] text-rose-600 dark:text-rose-300">Escalated to {alarm.escalatedTo}</p>}
-                    {alarm.correlatedTo && <p className="mt-1 text-[10px] text-violet-600 dark:text-violet-300">Correlated with {alarm.correlatedTo}</p>}
+                    {alarm.correlatedTo && <p className="mt-1 text-[10px] text-blue-600 dark:text-blue-300">Correlated with {alarm.correlatedTo}</p>}
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2">

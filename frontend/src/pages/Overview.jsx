@@ -48,13 +48,13 @@ function average(values) {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 }
 
-function tooltipStyle(isDark) {
+function tooltipStyle() {
   return {
-    backgroundColor: isDark ? '#0e1a2b' : '#ffffff',
-    borderColor: isDark ? '#26364b' : '#dfe7f1',
+    backgroundColor: 'var(--app-tooltip-bg)',
+    borderColor: 'var(--app-tooltip-border)',
     borderRadius: '0.5rem',
     fontSize: '11px',
-    color: isDark ? '#f8fafc' : '#172033',
+    color: 'var(--app-tooltip-text)',
   };
 }
 
@@ -118,13 +118,13 @@ export default function Overview() {
     <PageFrame title="Fleet Overview" description="Fleet status, energy performance, site health, and priority alerts.">
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Fleet performance indicators">
         <MetricCard icon={Building2} iconClass="bg-emerald-500/10 text-emerald-600" label="Sites in fleet" value={`${onlineSites.length} / ${accessibleSites.length}`} detail="All registered demo sites" />
-        <MetricCard icon={Zap} iconClass="bg-indigo-500/10 text-indigo-500" label="Installed capacity" value={`${capacityMW} MW`} detail="Across all four sites" />
+        <MetricCard icon={Zap} iconClass="bg-cyan-500/10 text-cyan-600" label="Installed capacity" value={`${capacityMW} MW`} detail="Across all four sites" />
         <MetricCard icon={Zap} iconClass="bg-cyan-500/10 text-cyan-600" label="Fleet active power" value={`${fleetPower.toFixed(1)} MW`} detail="Net instantaneous output" />
         <MetricCard icon={Battery} iconClass="bg-blue-500/10 text-blue-600" label="Stored energy" value={`${accessibleSites.reduce((sum, site) => sum + (site.soc / 100) * site.capacityMWh, 0).toFixed(1)} MWh`} detail="Estimated from SOC and capacity" />
         <MetricCard icon={Battery} iconClass="bg-emerald-500/10 text-emerald-600" label="Fleet state of charge" value={`${average(accessibleSites.map((site) => site.soc)).toFixed(1)}%`} detail="Mean across all sites" />
-        <MetricCard icon={HeartPulse} iconClass="bg-purple-500/10 text-purple-500" label="Fleet state of health" value={`${fleetSoh.toFixed(1)}%`} detail="Mean across all sites" />
+        <MetricCard icon={HeartPulse} iconClass="bg-emerald-500/10 text-emerald-600" label="Fleet state of health" value={`${fleetSoh.toFixed(1)}%`} detail="Mean across all sites" />
         <MetricCard icon={Activity} iconClass="bg-amber-500/10 text-amber-600" label="Fleet availability" value={`${fleetAvailability.toFixed(1)}%`} detail="Mean across all sites · target 99%" />
-        <MetricCard icon={Gauge} iconClass="bg-violet-500/10 text-violet-600" label="Round-trip efficiency" value={`${fleetRte.toFixed(1)}%`} detail="Mean across all sites" />
+        <MetricCard icon={Gauge} iconClass="bg-cyan-500/10 text-cyan-600" label="Round-trip efficiency" value={`${fleetRte.toFixed(1)}%`} detail="Mean across all sites" />
         <MetricCard icon={AlertTriangle} iconClass="bg-rose-500/10 text-rose-500" label="Active fleet alarms" value={activeAlarms.length} detail="All sites · all severities" />
         <MetricCard icon={Zap} iconClass="bg-teal-500/10 text-teal-600" label="Energy throughput" value={`${fleetEnergy.toFixed(1)} MWh`} detail="Delivered today across fleet" />
       </section>
@@ -133,12 +133,12 @@ export default function Overview() {
         <Panel title="Energy & state of charge" subtitle="24h view · sampled at 1 minute" action={<div className="flex items-center gap-2 text-[9px] text-slate-500"><span className="rounded border border-slate-200 px-1.5 py-1 font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">24H</span><span>7D</span><span>30D</span><Clock3 className="ml-1 h-3 w-3" /><span>1 minute</span><ChevronDown className="h-3 w-3" /></div>} className="min-h-[265px]">
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={chargeTrend} margin={{ top: 6, right: 4, left: -20, bottom: 0 }}>
-              <defs><linearGradient id="socFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#06b6d4" stopOpacity={0.2} /><stop offset="100%" stopColor="#06b6d4" stopOpacity={0.02} /></linearGradient></defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#26364b' : '#e4ebf1'} />
+              <defs><linearGradient id="socFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--app-accent)" stopOpacity={0.2} /><stop offset="100%" stopColor="var(--app-accent)" stopOpacity={0.02} /></linearGradient></defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'var(--app-tooltip-border)' : 'var(--app-chart-grid)'} />
               <XAxis dataKey="time" stroke={isDark ? '#94a3b8' : '#7b8da1'} fontSize={9} tickLine={false} />
               <YAxis domain={[0, 100]} stroke={isDark ? '#94a3b8' : '#7b8da1'} fontSize={9} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle(isDark)} formatter={(value, name) => [`${value}%`, name === 'soc' ? 'SOC' : 'Temperature']} />
-              <Area type="monotone" dataKey="soc" stroke="#06b6d4" strokeWidth={2} fill="url(#socFill)" />
+              <Tooltip contentStyle={tooltipStyle()} formatter={(value, name) => [`${value}%`, name === 'soc' ? 'SOC' : 'Temperature']} />
+              <Area type="monotone" dataKey="soc" stroke="var(--app-accent)" strokeWidth={2} fill="url(#socFill)" />
               <Line type="monotone" dataKey="temperature" stroke="#e5a22b" strokeWidth={2} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
@@ -182,10 +182,10 @@ export default function Overview() {
         <Panel title="Fleet energy today" subtitle="Daily energy delivered by site" className="min-h-[245px]">
           <ResponsiveContainer width="100%" height={170}>
             <BarChart data={accessibleSites.map((site) => ({ site: site.name.split(' ')[0], energy: site.energyTodayMWh }))} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#26364b' : '#e4ebf1'} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'var(--app-tooltip-border)' : 'var(--app-chart-grid)'} />
               <XAxis dataKey="site" stroke={isDark ? '#94a3b8' : '#7b8da1'} fontSize={9} tickLine={false} />
               <YAxis stroke={isDark ? '#94a3b8' : '#7b8da1'} fontSize={9} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle(isDark)} formatter={(value) => [`${value} MWh`, 'Energy']} />
+              <Tooltip contentStyle={tooltipStyle()} formatter={(value) => [`${value} MWh`, 'Energy']} />
               <Bar dataKey="energy" fill="#15978b" radius={[4, 4, 0, 0]} barSize={54} />
             </BarChart>
           </ResponsiveContainer>

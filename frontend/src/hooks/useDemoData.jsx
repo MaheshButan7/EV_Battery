@@ -24,8 +24,11 @@ const initialParts = [
   { id: 'SP-022', name: 'Fire panel sensor', category: 'Safety', stock: 18, reserved: 0, minimum: 5, location: 'Central Store', siteId: null },
   { id: 'SP-023', name: 'Fire system backup battery', category: 'Safety', stock: 11, reserved: 2, minimum: 6, location: 'Central Store', siteId: null },
   { id: 'SP-024', name: 'Thermal sensor harness', category: 'Controls', stock: 3, reserved: 0, minimum: 4, location: 'Central Store', siteId: null },
+  { id: 'TOOL-001', name: 'Portable insulation tester', category: 'Tools', itemType: 'Tool', stock: 2, reserved: 0, minimum: 1, location: 'Central Store', siteId: null },
+  { id: 'EQP-001', name: 'Thermal inspection camera', category: 'Tools', itemType: 'Equipment', stock: 1, reserved: 0, minimum: 1, location: 'Jodhpur Store', siteId: 'BESS-JODHUR' },
 ].map((part, index) => ({
   ...part,
+  itemType: part.itemType || 'Spare part',
   compatibleAssetTypes: part.category === 'HVAC' ? ['HVAC'] : part.category === 'Safety' ? ['Fire System', 'Sensor'] : part.category === 'Battery' ? ['Cell', 'Module', 'Rack'] : part.category === 'Communications' ? ['Gateway', 'Network Equipment'] : ['BMS', 'PCS', 'Switchgear'],
   supplier: ['Enerteck Spares', 'GridStore Supply', 'Axiom Industrial'][index % 3],
   leadTimeDays: [5, 12, 18, 7][index % 4],
@@ -159,8 +162,6 @@ export function DemoDataProvider({ children }) {
   const accessibleSiteIds = user?.siteIds?.length ? user.siteIds : mockSites.map((site) => site.id);
   const defaultSiteId = accessibleSiteIds.includes('BESS-JODHUR') ? 'BESS-JODHUR' : accessibleSiteIds[0];
   const [selectedSiteId, setSelectedSiteId] = useState(() => localStorage.getItem('bess_selected_site') || defaultSiteId);
-  const [tick, setTick] = useState(0);
-  const [lastUpdated, setLastUpdated] = useState(() => new Date());
   const [alarms, setAlarms] = useState(() => makeInitialAlarms().map((alarm) => ({
     ...alarm,
     state: 'Active',
@@ -190,15 +191,6 @@ export function DemoDataProvider({ children }) {
   const selectSite = (siteId) => {
     if (accessibleSiteIds.includes(siteId)) setSelectedSiteId(siteId);
   };
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setTick((value) => value + 1);
-      setLastUpdated(new Date());
-    }, 2000);
-
-    return () => window.clearInterval(timer);
-  }, []);
 
   const addEvent = (event) => {
     setEvents((current) => [{
@@ -290,7 +282,7 @@ export function DemoDataProvider({ children }) {
     return workOrder;
   };
 
-  const createManualWorkOrder = ({ siteId, assetId, description, priority = 'Major', type = 'Corrective' }, user = 'Demo Operator') => {
+  const createManualWorkOrder = ({ siteId, assetId, description, priority = 'Major', type = 'Corrective', dueDate, assignee, checklist, sop }, user = 'Demo Operator') => {
     const workOrder = {
       id: `WO-${String(Math.max(3000, ...workOrders.map((item) => Number(item.id.replace('WO-', '')) || 0)) + 1).padStart(4, '0')}`,
       siteId,
@@ -298,10 +290,11 @@ export function DemoDataProvider({ children }) {
       type,
       description,
       priority,
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      assignee: 'Unassigned',
+      dueDate: dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      assignee: assignee || 'Unassigned',
       status: 'New',
-      checklist: defaultChecklist(),
+      checklist: checklist || defaultChecklist(),
+      sop: sop || '',
       reservedParts: [],
     };
     setWorkOrders((current) => [workOrder, ...current]);
@@ -353,6 +346,18 @@ export function DemoDataProvider({ children }) {
     return true;
   };
 
+  const consumeReservedPartForWorkOrder = (workOrderId, partId, user = 'Demo Operator') => {
+    const workOrder = workOrders.find((item) => item.id === workOrderId);
+    const part = parts.find((item) => item.id === partId);
+    if (!workOrder || !part || !(workOrder.reservedParts || []).includes(partId) || part.stock < 1 || part.reserved < 1) return false;
+    setParts((current) => current.map((item) => item.id === partId ? { ...item, stock: item.stock - 1, reserved: item.reserved - 1 } : item));
+    setWorkOrders((current) => current.map((item) => item.id === workOrderId
+      ? { ...item, reservedParts: (item.reservedParts || []).filter((id) => id !== partId), consumedMaterials: [...(item.consumedMaterials || []), { partId, name: part.name, quantity: 1, timestamp: new Date().toISOString() }] }
+      : item));
+    addEvent({ type: 'Material consumed on work order', workOrderId, siteId: workOrder.siteId, partId, partName: part.name, quantity: 1, actor: user });
+    return true;
+  };
+
   const updatePermit = (changes, user = 'Demo Operator') => {
     setPermit((current) => ({ ...current, ...changes }));
     addEvent({ type: 'Permit updated', permitId: permit.id, ...changes, actor: user });
@@ -376,9 +381,23 @@ export function DemoDataProvider({ children }) {
     return true;
   };
 
+  const addInventoryItem = (item, user = 'Demo Operator') => {
+    const part = {
+      ...item,
+      id: item.id || `INV-${Date.now().toString().slice(-7)}`,
+      stock: Number(item.stock) || 0,
+      reserved: 0,
+      minimum: Number(item.minimum) || 0,
+      leadTimeDays: Number(item.leadTimeDays) || 0,
+      compatibleAssetTypes: item.compatibleAssetTypes ? item.compatibleAssetTypes.split(',').map((value) => value.trim()).filter(Boolean) : [],
+      siteId: item.siteId || selectedSiteId,
+    };
+    setParts((current) => [part, ...current]);
+    addEvent({ type: 'Inventory item added', partId: part.id, partName: part.name, quantity: part.stock, siteId: part.siteId || selectedSiteId, actor: user });
+    return part;
+  };
+
   const value = useMemo(() => ({
-    tick,
-    lastUpdated,
     connection: 'Connected',
     accessibleSiteIds,
     accessibleSites: mockSites.filter((site) => accessibleSiteIds.includes(site.id)).map((site) => ({
@@ -412,10 +431,12 @@ export function DemoDataProvider({ children }) {
     updateWorkOrderDetails,
     updateWorkOrderChecklist,
     reservePartForWorkOrder,
+    consumeReservedPartForWorkOrder,
     updatePermit,
     reservePart,
     updatePartStock,
-  }), [tick, lastUpdated, alarms, workOrders, events, permit, parts, accessibleSiteIds, selectedSiteId]);
+    addInventoryItem,
+  }), [alarms, workOrders, events, permit, parts, accessibleSiteIds, selectedSiteId]);
 
   return <DemoDataContext.Provider value={value}>{children}</DemoDataContext.Provider>;
 }

@@ -16,6 +16,7 @@ import {
   Settings,
   HelpCircle,
   Smartphone,
+  BrainCircuit,
 } from 'lucide-react';
 
 export const navigationGroups = [
@@ -56,6 +57,7 @@ export const navigationGroups = [
   {
     label: 'Insights',
     items: [
+      { id: 'ai-insights', name: 'AI Insights', path: '/ai-insights', icon: BrainCircuit },
       { id: 'analytics', name: 'Performance Analytics', path: '/analytics', icon: BarChart3 },
       { id: 'history', name: 'Historical Trends', path: '/history', icon: Activity },
       { id: 'reports', name: 'Reports', path: '/reports', icon: FileBarChart },

@@ -14,6 +14,7 @@ const Maintenance = lazy(() => import('../pages/Maintenance'));
 const PermitToWork = lazy(() => import('../pages/PermitToWork'));
 const Inventory = lazy(() => import('../pages/Inventory'));
 const Analytics = lazy(() => import('../pages/Analytics'));
+const AIInsights = lazy(() => import('../pages/AIInsights'));
 const HistoricalTrends = lazy(() => import('../pages/HistoricalTrends'));
 const Executive = lazy(() => import('../pages/Executive'));
 const Reports = lazy(() => import('../pages/Reports'));
@@ -25,10 +26,14 @@ const FieldMode = lazy(() => import('../pages/FieldMode'));
 
 function RouteLoading() {
   return (
-    <div className="flex min-h-[24rem] items-center justify-center p-8" role="status" aria-live="polite">
-      <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/[0.06] px-4 py-3 text-xs font-semibold text-cyan-700 dark:text-cyan-300">
-        Loading dashboard…
+    <div className="mx-auto min-h-[24rem] w-full max-w-[1800px] space-y-6 px-4 py-6 sm:px-6 lg:px-8" role="status" aria-live="polite" aria-busy="true">
+      <span className="sr-only">Loading dashboard</span>
+      <div className="animate-pulse space-y-3">
+        <div className="h-3 w-40 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="h-6 w-64 max-w-full rounded bg-slate-200 dark:bg-slate-800" />
       </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{Array.from({ length: 4 }, (_, index) => <div key={index} className="h-24 rounded-xl border border-slate-200 bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900" />)}</div>
+      <div className="grid gap-4 lg:grid-cols-2"><div className="h-64 rounded-xl border border-slate-200 bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900" /><div className="h-64 rounded-xl border border-slate-200 bg-slate-100/70 dark:border-slate-800 dark:bg-slate-900" /></div>
     </div>
   );
 }
@@ -50,6 +55,7 @@ export default function AppRoutes() {
         <Route path="/maintenance/permits" element={<PermitToWork />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/ai-insights" element={<AIInsights />} />
         <Route path="/history" element={<HistoricalTrends />} />
         <Route path="/executive" element={<Executive />} />
         <Route path="/reports" element={<Reports />} />

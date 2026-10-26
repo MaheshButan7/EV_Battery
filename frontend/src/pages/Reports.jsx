@@ -139,11 +139,11 @@ export default function Reports() {
   const [customName, setCustomName] = useState('');
   const [customMetrics, setCustomMetrics] = useState(['Installed power', 'Energy capacity', 'State of charge', 'State of health', 'Availability', 'Active alarms']);
   const [templateMetrics, setTemplateMetrics] = useState({});
-  const { selectedSite, accessibleSites, alarms } = useDemoData();
+  const { selectedSite, accessibleSites, accessibleAlarms } = useDemoData();
   const [reportSiteId, setReportSiteId] = useState(() => selectedSite?.id || '');
   const [period, setPeriod] = useState('Last 30 days');
   const reportSite = reportSiteId ? accessibleSites.find((site) => site.id === reportSiteId) || null : null;
-  const activeAlarmCount = alarms.filter((alarm) => alarm.state === 'Active' && (!reportSiteId || alarm.siteId === reportSiteId)).length;
+  const activeAlarmCount = accessibleAlarms.filter((alarm) => alarm.state === 'Active' && (!reportSiteId || alarm.siteId === reportSiteId)).length;
   const reportDate = new Date();
   const generatedLabel = reportDate.toLocaleDateString([], { month: 'long', year: 'numeric' });
   const previewMetrics = [

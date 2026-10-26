@@ -12,14 +12,14 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const { selectedSiteId, accessibleSiteIds } = useDemoData();
-  const siteMatch = location.pathname.match(/^\/site\/([^/]+)/);
-  const currentSiteId = siteMatch ? siteMatch[1] : selectedSiteId;
+  const routeSiteId = location.pathname.match(/^\/site\/([^/]+)/)?.[1] || null;
+  const currentSiteId = routeSiteId || selectedSiteId;
 
   useEffect(() => {
-    if (siteMatch && !accessibleSiteIds.includes(siteMatch[1])) {
+    if (routeSiteId && !accessibleSiteIds.includes(routeSiteId)) {
       navigate(`/site/${selectedSiteId}`, { replace: true });
     }
-  }, [accessibleSiteIds, navigate, selectedSiteId, siteMatch]);
+  }, [accessibleSiteIds, navigate, selectedSiteId, routeSiteId]);
 
   return (
     <div className="app-canvas flex h-[100dvh] min-h-0 overflow-hidden font-sans antialiased text-slate-900 dark:text-slate-100">

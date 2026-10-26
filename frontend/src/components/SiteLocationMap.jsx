@@ -7,7 +7,7 @@ import 'leaflet/dist/leaflet.css';
 
 const STATUS_COLORS = {
   Charging: '#10b981',
-  Discharging: '#06b6d4',
+  Discharging: 'var(--app-accent)',
   Fault: '#f43f5e',
   Offline: '#64748b',
   Idle: '#94a3b8',
@@ -58,7 +58,7 @@ export default function SiteLocationMap({ sites = [], onSelectSite, layers = {},
         <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Live site locations · OpenStreetMap</p>
       </div>
       <div className="relative min-h-[360px] min-w-0 flex-1 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
-        <button type="button" onClick={(event) => { event.stopPropagation(); onFitFleet?.(); }} onPointerDown={(event) => event.stopPropagation()} className="absolute bottom-3 left-3 z-[1000] inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white/95 text-slate-700 shadow-md backdrop-blur transition-colors hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 dark:border-slate-700 dark:bg-slate-900/95 dark:text-slate-200 dark:hover:border-cyan-700 dark:hover:bg-slate-800 dark:hover:text-cyan-300" aria-label="Fit map to visible fleet sites" title="Fit map to visible fleet sites">
+      <button type="button" onClick={(event) => { event.stopPropagation(); onFitFleet?.(); }} onPointerDown={(event) => event.stopPropagation()} className="absolute bottom-3 left-3 z-[1000] inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-cyan-700 dark:hover:bg-slate-800 dark:hover:text-cyan-300" aria-label="Fit map to visible fleet sites" title="Fit map to visible fleet sites">
           <LocateFixed className="h-5 w-5" />
         </button>
         <MapContainer

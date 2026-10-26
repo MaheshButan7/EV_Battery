@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import PageFrame from '../components/ui/PageFrame';
 import { useDemoData } from '../hooks/useDemoData';
-import { Activity, AlertCircle, ArrowRight, BrainCircuit, CalendarClock, CheckCircle2, ClipboardPlus, Gauge, ShieldAlert, Sparkles, Thermometer } from 'lucide-react';
+import { Activity, AlertCircle, ArrowRight, BrainCircuit, CalendarClock, CheckCircle2, ClipboardPlus, Gauge, ShieldAlert, Thermometer } from 'lucide-react';
 
 const demoSignals = {
   'BESS-JODHUR': { issue: 'Elevated cell temperature; thermal risk watch', recommendation: 'Inspect affected rack and verify cooling and fire protection readiness.', confidence: 93.1, priority: 'Critical' },
@@ -39,8 +39,8 @@ export default function AssetHealth() {
 
   return (
     <PageFrame title="Asset Health & Predictive Maintenance" description="Prioritize fleet risks, understand model signals, and turn predictive recommendations into planned maintenance.">
-      <div className="mb-4 flex items-start gap-3 rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-3 text-xs text-slate-700 dark:text-slate-300">
-        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-500" />
+      <div className="mb-4 flex items-start gap-3 rounded-xl border border-blue-500/20 bg-blue-500/[0.06] p-3 text-xs text-slate-700 dark:text-slate-300">
+        <BrainCircuit className="mt-0.5 h-4 w-4 shrink-0 text-cyan-700 dark:text-cyan-300" />
         <p><strong>AI/ML demo view.</strong> Predictions and confidence values use synthetic demo data. They are illustrative and have not been produced by a trained or validated production model.</p>
       </div>
 

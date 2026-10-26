@@ -34,13 +34,13 @@ function average(values) {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 }
 
-function tooltipStyle(isDark) {
+function tooltipStyle() {
   return {
-    backgroundColor: isDark ? '#0e1a2b' : '#ffffff',
-    borderColor: isDark ? '#26364b' : '#dfe7f1',
+    backgroundColor: 'var(--app-tooltip-bg)',
+    borderColor: 'var(--app-tooltip-border)',
     borderRadius: '0.75rem',
     fontSize: '11px',
-    color: isDark ? '#f8fafc' : '#172033',
+    color: 'var(--app-tooltip-text)',
   };
 }
 
@@ -161,12 +161,12 @@ export default function Executive() {
         <ChartCard title="Fleet energy movement" subtitle="Daily energy charged and discharged across all sites" badgeText="MWh">
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={mockFleetOverview.energyLast7Days} margin={{ top: 8, right: 8, left: -18, bottom: 0 }} barCategoryGap="28%">
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#26364b' : '#e2eaf2'} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'var(--app-tooltip-border)' : 'var(--app-chart-grid)'} />
               <XAxis dataKey="day" stroke={isDark ? '#94a3b8' : '#64748b'} fontSize={10} tickLine={false} />
               <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} fontSize={10} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle(isDark)} formatter={(value, name) => [`${value} MWh`, name === 'charged' ? 'Charged' : 'Discharged']} />
+              <Tooltip contentStyle={tooltipStyle()} formatter={(value, name) => [`${value} MWh`, name === 'charged' ? 'Charged' : 'Discharged']} />
               <Bar dataKey="charged" name="Charged" fill="#10b981" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="discharged" name="Discharged" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="discharged" name="Discharged" fill="var(--app-accent)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -174,12 +174,12 @@ export default function Executive() {
         <ChartCard title="Fleet battery health" subtitle="Average state of health trend over the last 12 months" badgeText="SoH %">
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={mockFleetOverview.sohTrend} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-              <defs><linearGradient id="executiveFleetSohFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#06b6d4" stopOpacity={0.28} /><stop offset="95%" stopColor="#06b6d4" stopOpacity={0} /></linearGradient></defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#26364b' : '#e2eaf2'} />
+              <defs><linearGradient id="executiveFleetSohFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--app-accent)" stopOpacity={0.28} /><stop offset="95%" stopColor="var(--app-accent)" stopOpacity={0} /></linearGradient></defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'var(--app-tooltip-border)' : 'var(--app-chart-grid)'} />
               <XAxis dataKey="month" stroke={isDark ? '#94a3b8' : '#64748b'} fontSize={10} tickLine={false} />
               <YAxis domain={[50, 100]} stroke={isDark ? '#94a3b8' : '#64748b'} fontSize={10} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle(isDark)} formatter={(value) => [`${value}%`, 'Average SoH']} />
-              <Area type="monotone" dataKey="avgSoh" stroke="#06b6d4" strokeWidth={2.5} fill="url(#executiveFleetSohFill)" activeDot={{ r: 4 }} />
+              <Tooltip contentStyle={tooltipStyle()} formatter={(value) => [`${value}%`, 'Average SoH']} />
+              <Area type="monotone" dataKey="avgSoh" stroke="var(--app-accent)" strokeWidth={2.5} fill="url(#executiveFleetSohFill)" activeDot={{ r: 4 }} />
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>

@@ -15,7 +15,7 @@ export default function PcsDashboard() {
   const { accessibleAlarms } = useDemoData();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const tooltipStyle = { backgroundColor: isDark ? '#0e1a2b' : '#fff', border: `1px solid ${isDark ? '#26364b' : '#e2e8f0'}`, borderRadius: 12, color: isDark ? '#e2e8f0' : '#172033', fontSize: 11 };
+  const tooltipStyle = { backgroundColor: 'var(--app-tooltip-bg)', border: `1px solid var(--app-tooltip-border)`, borderRadius: 12, color: 'var(--app-tooltip-text)', fontSize: 11 };
 
   useEffect(() => {
     let active = true;
@@ -64,13 +64,13 @@ export default function PcsDashboard() {
         <ChartCard title={`PCS-0${pcsIndex} power and efficiency`} subtitle="Hourly site power apportioned equally to the selected demo PCS; efficiency curve is illustrative." badgeText="24 hours">
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={powerProfile} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-              <defs><linearGradient id="pcsPowerFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} /><stop offset="95%" stopColor="#06b6d4" stopOpacity={0} /></linearGradient></defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#26364b' : '#e2e8f0'} />
+              <defs><linearGradient id="pcsPowerFill" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--app-accent)" stopOpacity={0.3} /><stop offset="95%" stopColor="var(--app-accent)" stopOpacity={0} /></linearGradient></defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? 'var(--app-tooltip-border)' : '#e2e8f0'} />
               <XAxis dataKey="hour" interval={3} fontSize={10} stroke={isDark ? '#94a3b8' : '#64748b'} />
               <YAxis yAxisId="power" fontSize={10} unit=" MW" stroke={isDark ? '#94a3b8' : '#64748b'} />
               <YAxis yAxisId="efficiency" orientation="right" domain={[90, 100]} fontSize={10} unit="%" stroke={isDark ? '#94a3b8' : '#64748b'} />
               <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [`${value}${name === 'power' ? ' MW' : '%'}`, name === 'power' ? 'Active power' : 'Efficiency']} />
-              <Area yAxisId="power" type="monotone" dataKey="power" stroke="#06b6d4" fill="url(#pcsPowerFill)" name="power" />
+              <Area yAxisId="power" type="monotone" dataKey="power" stroke="var(--app-accent)" fill="url(#pcsPowerFill)" name="power" />
               <Line yAxisId="efficiency" type="monotone" dataKey="efficiency" stroke="#10b981" strokeWidth={2} dot={false} name="efficiency" />
             </AreaChart>
           </ResponsiveContainer>

@@ -5,15 +5,25 @@ import Button from '../components/ui/Button';
 import { AlertTriangle, ArrowDownToLine, ClipboardList, Package, Plus, ShoppingCart } from 'lucide-react';
 
 const availableQuantity = (part) => Math.max(0, part.stock - part.reserved);
+const itemTypes = ['Equipment', 'Spare part', 'Consumable', 'Tool', 'Material'];
+const itemCategories = ['Battery', 'Electrical', 'HVAC', 'Controls', 'Safety', 'Communications', 'Tools', 'Consumables', 'Other'];
+const emptyItem = { name: '', itemType: 'Spare part', category: 'Electrical', stock: '0', minimum: '1', location: '', supplier: '', leadTimeDays: '7', compatibleAssetTypes: '' };
 
 export default function Inventory() {
-  const { parts, events, reservePart, updatePartStock, selectedSite } = useDemoData();
+  const { parts, events, reservePart, updatePartStock, addInventoryItem, selectedSite } = useDemoData();
   const transactionForm = useRef(null);
   const siteParts = useMemo(() => parts.filter((part) => (
     part.siteId === selectedSite?.id || part.siteId === null
   )), [parts, selectedSite?.id]);
   const [transaction, setTransaction] = useState({ partId: siteParts[0]?.id || '', type: 'Receive', quantity: '1' });
   const [notice, setNotice] = useState('');
+  const [query, setQuery] = useState('');
+  const [stockFilter, setStockFilter] = useState('All stock');
+  const [typeFilter, setTypeFilter] = useState('All types');
+  const [categoryFilter, setCategoryFilter] = useState('All categories');
+  const [locationFilter, setLocationFilter] = useState('All locations');
+  const [addOpen, setAddOpen] = useState(false);
+  const [newItem, setNewItem] = useState(emptyItem);
 
   useEffect(() => {
     if (!siteParts.some((part) => part.id === transaction.partId)) {
@@ -22,6 +32,20 @@ export default function Inventory() {
   }, [siteParts, transaction.partId]);
 
   const selectedPart = siteParts.find((part) => part.id === transaction.partId);
+  const visibleParts = useMemo(() => siteParts.filter((part) => {
+    const searchMatch = `${part.id} ${part.name} ${part.category} ${part.location} ${part.supplier}`.toLowerCase().includes(query.trim().toLowerCase());
+    const available = availableQuantity(part);
+    const statusMatch = stockFilter === 'All stock'
+      || (stockFilter === 'Healthy' && available >= part.minimum)
+      || (stockFilter === 'Reorder' && available < part.minimum)
+      || (stockFilter === 'Out of stock' && available === 0);
+    const typeMatch = typeFilter === 'All types' || (part.itemType || 'Spare part') === typeFilter;
+    const categoryMatch = categoryFilter === 'All categories' || part.category === categoryFilter;
+    const placeMatch = locationFilter === 'All locations' || part.location === locationFilter;
+    return searchMatch && statusMatch && typeMatch && categoryMatch && placeMatch;
+  }), [siteParts, query, stockFilter, typeFilter, categoryFilter, locationFilter]);
+  const locations = [...new Set(siteParts.map((part) => part.location).filter(Boolean))];
+  const categories = [...new Set(siteParts.map((part) => part.category).filter(Boolean))];
   const lowStockParts = useMemo(() => siteParts
     .map((part) => ({ ...part, available: availableQuantity(part), reorderQuantity: Math.max(0, part.minimum - availableQuantity(part)) }))
     .filter((part) => part.reorderQuantity > 0)
@@ -70,6 +94,22 @@ export default function Inventory() {
       : 'Transaction would reduce stock below the reserved quantity.');
   };
 
+  const submitNewItem = (event) => {
+    event.preventDefault();
+    const name = newItem.name.trim();
+    const stock = Number(newItem.stock);
+    const minimum = Number(newItem.minimum);
+    if (!name || !Number.isInteger(stock) || stock < 0 || !Number.isInteger(minimum) || minimum < 0) {
+      setNotice('Enter an item name and valid whole-number quantities.');
+      return;
+    }
+    const location = newItem.location.trim() || `${selectedSite.name} Store`;
+    const created = addInventoryItem({ ...newItem, name, stock, minimum, location, siteId: location === 'Central Store' ? null : selectedSite.id });
+    setNewItem(emptyItem);
+    setAddOpen(false);
+    setNotice(`${created.name} added to ${location}.`);
+  };
+
   if (!selectedSite) {
     return <PageFrame title="Inventory" description="Select a site to view its spare parts and stock levels." />;
   }
@@ -77,12 +117,12 @@ export default function Inventory() {
   return (
     <PageFrame
       title="Inventory"
-      description={`${selectedSite.name} spare parts, with shared central-store stock included in this site view.`}
+      description={`${selectedSite.name} equipment, spare parts, tools, and maintenance supplies, including shared central-store stock.`}
     >
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3" aria-label="Site inventory summary">
         <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900">
           <Package className="h-5 w-5 text-cyan-500" />
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Parts in view</p>
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Inventory items</p>
           <p className="mt-1 text-3xl font-bold tabular-nums text-slate-900 dark:text-white">{siteParts.length}</p>
           <p className="mt-1 text-[10px] text-slate-500">Site store and shared stock</p>
         </div>
@@ -174,42 +214,55 @@ export default function Inventory() {
         {notice && <p role="status" className="w-full text-xs text-cyan-700 dark:text-cyan-300">{notice}</p>}
       </form>
 
-      <section className="surface-card overflow-x-auto rounded-2xl border bg-white p-5 dark:bg-slate-900" aria-label="Parts stock table">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900" aria-label="Equipment and parts inventory">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Parts at {selectedSite.name}</h2>
-            <p className="mt-1 text-xs text-slate-500">Central store entries are shared across site views.</p>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white">Equipment & inventory at {selectedSite.name}</h2>
+            <p className="mt-1 text-xs text-slate-500">Equipment, spare parts, consumables, tools, and materials. Shared central-store items are included.</p>
           </div>
-          <span className="text-[10px] font-medium text-slate-400">{siteParts.length} part types</span>
+          <div className="flex items-center gap-3"><span className="text-[10px] font-medium text-slate-400">{visibleParts.length} of {siteParts.length} items</span><Button size="sm" variant={addOpen ? 'secondary' : 'primary'} icon={Plus} onClick={() => setAddOpen((open) => !open)}>{addOpen ? 'Close' : 'Add item'}</Button></div>
         </div>
-        <table className="w-full min-w-[850px] text-xs">
-          <thead>
-            <tr className="border-b border-slate-200 text-left text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-800">
-              <th className="pb-3">Part</th><th className="pb-3">Category / compatible assets</th><th className="pb-3">Location / supplier</th><th className="pb-3">On hand</th><th className="pb-3">Reserved</th><th className="pb-3">Available</th><th className="pb-3">Minimum</th><th className="pb-3">Lead time</th><th className="pb-3">Status</th><th className="pb-3">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {siteParts.map((part) => {
+        {addOpen && <form onSubmit={submitNewItem} className="mb-4 grid gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:col-span-2">Item name<input required maxLength={90} value={newItem.name} onChange={(event) => setNewItem((item) => ({ ...item, name: event.target.value }))} placeholder="e.g. Portable insulation tester" className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Item type<select value={newItem.itemType} onChange={(event) => setNewItem((item) => ({ ...item, itemType: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700 dark:bg-slate-900">{itemTypes.map((type) => <option key={type}>{type}</option>)}</select></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Category<select value={newItem.category} onChange={(event) => setNewItem((item) => ({ ...item, category: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700 dark:bg-slate-900">{itemCategories.map((category) => <option key={category}>{category}</option>)}</select></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Storage location<input value={newItem.location} onChange={(event) => setNewItem((item) => ({ ...item, location: event.target.value }))} placeholder={`${selectedSite.name} Store`} list="inventory-locations" className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /><datalist id="inventory-locations">{locations.map((location) => <option key={location} value={location} />)}<option value="Central Store" /></datalist></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">On hand<input required type="number" min="0" step="1" value={newItem.stock} onChange={(event) => setNewItem((item) => ({ ...item, stock: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Reorder threshold<input required type="number" min="0" step="1" value={newItem.minimum} onChange={(event) => setNewItem((item) => ({ ...item, minimum: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Supplier<input value={newItem.supplier} onChange={(event) => setNewItem((item) => ({ ...item, supplier: event.target.value }))} placeholder="Supplier name" className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Lead time (days)<input type="number" min="0" step="1" value={newItem.leadTimeDays} onChange={(event) => setNewItem((item) => ({ ...item, leadTimeDays: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+          <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:col-span-2">Compatible equipment<input value={newItem.compatibleAssetTypes} onChange={(event) => setNewItem((item) => ({ ...item, compatibleAssetTypes: event.target.value }))} placeholder="e.g. HVAC, BMS, PCS" className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label>
+          <div className="flex items-end justify-end sm:col-span-2 lg:col-span-4"><Button type="submit" size="sm" variant="primary">Add to inventory</Button></div>
+        </form>}
+        <div className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name, ID, category, supplier" aria-label="Search inventory" className="min-w-0 rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 dark:border-slate-700 dark:text-slate-200" />
+          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} aria-label="Filter by item type" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><option>All types</option>{itemTypes.map((type) => <option key={type}>{type}</option>)}</select>
+          <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Filter by category" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><option>All categories</option>{categories.map((category) => <option key={category}>{category}</option>)}</select>
+          <select value={stockFilter} onChange={(event) => setStockFilter(event.target.value)} aria-label="Filter by stock status" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><option>All stock</option><option>Healthy</option><option>Reorder</option><option>Out of stock</option></select>
+          <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} aria-label="Filter by storage location" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><option>All locations</option>{locations.map((location) => <option key={location}>{location}</option>)}</select>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+          {visibleParts.map((part) => {
               const available = availableQuantity(part);
               const low = available < part.minimum;
               const outOfStock = available === 0;
               return (
-                <tr key={part.id} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
-                  <td className="py-3"><strong className="text-slate-800 dark:text-slate-200">{part.name}</strong><br /><span className="font-mono text-[10px] text-slate-400">{part.id}</span></td>
-                  <td className="py-3 text-slate-600 dark:text-slate-300">{part.category}<span className="mt-1 block max-w-40 text-[9px] text-slate-400">Fits {(part.compatibleAssetTypes || []).join(', ')}</span></td>
-                  <td className="py-3 text-slate-600 dark:text-slate-300">{part.location}<span className="mt-1 block text-[9px] text-slate-400">{part.supplier}{part.siteId === null && ' · Shared store'}</span></td>
-                  <td className="py-3 tabular-nums">{part.stock}</td>
-                  <td className="py-3 tabular-nums">{part.reserved}</td>
-                  <td className={`py-3 font-semibold tabular-nums ${low ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'}`}>{available}</td>
-                  <td className="py-3 tabular-nums">{part.minimum}</td>
-                  <td className="py-3 whitespace-nowrap text-slate-600 dark:text-slate-300">{part.leadTimeDays} days</td>
-                  <td className={`py-3 font-semibold ${outOfStock ? 'text-rose-600 dark:text-rose-400' : low ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{outOfStock ? 'Out of stock' : low ? 'Reorder' : 'Healthy'}</td>
-                  <td className="py-3"><Button size="sm" variant="subtle" disabled={part.stock <= part.reserved} onClick={() => reservePart(part.id)}>Reserve</Button></td>
-                </tr>
+                <article key={part.id} className="min-w-0 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0"><p className="break-words text-xs font-semibold text-slate-900 dark:text-white">{part.name}</p><p className="mt-1 font-mono text-[10px] text-slate-400">{part.id} · {part.itemType || 'Spare part'} · {part.category}</p></div>
+                    <span className={`shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold ${outOfStock ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300' : low ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}`}>{outOfStock ? 'Out of stock' : low ? 'Reorder' : 'Healthy'}</span>
+                  </div>
+                  <p className="mt-2 text-[10px] text-slate-500">{part.location}{part.siteId === null ? ' · Shared store' : ''} · {part.supplier}</p>
+                  <p className="mt-1 break-words text-[10px] text-slate-400">Fits {(part.compatibleAssetTypes || []).join(', ')} · Lead time {part.leadTimeDays} days</p>
+                  <dl className="mt-4 grid grid-cols-4 gap-2 border-t border-slate-100 pt-3 text-[10px] dark:border-slate-800">
+                    {[['On hand', part.stock], ['Reserved', part.reserved], ['Available', available], ['Minimum', part.minimum]].map(([label, value]) => <div key={label} className="min-w-0"><dt className="truncate text-slate-500">{label}</dt><dd className={`mt-1 font-semibold tabular-nums ${label === 'Available' && low ? 'text-amber-600 dark:text-amber-400' : 'text-slate-800 dark:text-slate-200'}`}>{value}</dd></div>)}
+                  </dl>
+                  <div className="mt-3 flex justify-end"><Button size="sm" variant="subtle" disabled={part.stock <= part.reserved} onClick={() => reservePart(part.id)}>Reserve 1 unit</Button></div>
+                </article>
               );
-            })}
-          </tbody>
-        </table>
+          })}
+          {visibleParts.length === 0 && <p className="col-span-full rounded-xl border border-dashed border-slate-300 p-8 text-center text-xs text-slate-500 dark:border-slate-700">No parts match this search and stock filter.</p>}
+        </div>
       </section>
 
       <section className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900" aria-label="Recent site stock activity">

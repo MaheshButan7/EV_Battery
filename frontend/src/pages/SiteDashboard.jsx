@@ -27,13 +27,13 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 
-function tooltipStyle(isDark) {
+function tooltipStyle() {
   return {
-    backgroundColor: isDark ? '#0e1a2b' : '#ffffff',
-    borderColor: isDark ? '#26364b' : '#dfe7f1',
+    backgroundColor: 'var(--app-tooltip-bg)',
+    borderColor: 'var(--app-tooltip-border)',
     borderRadius: '0.75rem',
     fontSize: '12px',
-    color: isDark ? '#f8fafc' : '#172033',
+    color: 'var(--app-tooltip-text)',
   };
 }
 
@@ -50,7 +50,7 @@ export default function SiteDashboard() {
   const { id } = useParams();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const gridColor = isDark ? '#26364b' : '#e2eaf2';
+  const gridColor = isDark ? 'var(--app-tooltip-border)' : 'var(--app-chart-grid)';
   const axisColor = isDark ? '#94a3b8' : '#64748b';
   const { alarms } = useDemoData();
 
@@ -226,7 +226,7 @@ export default function SiteDashboard() {
           { label: 'Availability', value: `${site.availability}%`, sub: '30-day rolling', icon: Shield },
           { label: 'Total cycles', value: site.cycles.toLocaleString(), sub: 'Equivalent full cycles', icon: RefreshCw },
         ].map(({ label, value, sub, icon: Icon }) => (
-          <div key={label} className="surface-card group flex min-h-[118px] flex-col gap-3 rounded-2xl border p-4 hover:-translate-y-0.5">
+          <div key={label} className="surface-card flex min-h-[118px] flex-col gap-3 rounded-xl border p-4">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-50 text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300">
                 <Icon className="w-4 h-4" />
@@ -290,8 +290,8 @@ export default function SiteDashboard() {
                 <stop offset="95%" stopColor="#10b981" stopOpacity={0.6} />
               </linearGradient>
               <linearGradient id="dischargingGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.9} />
-                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.6} />
+                <stop offset="5%" stopColor="var(--app-accent)" stopOpacity={0.9} />
+                <stop offset="95%" stopColor="var(--app-accent)" stopOpacity={0.6} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
@@ -299,7 +299,7 @@ export default function SiteDashboard() {
             <YAxis yAxisId="power" stroke={axisColor} fontSize={11} tickLine={false} unit=" MW" domain={[-35, 35]} ticks={[-30, -20, -10, 0, 10, 20, 30]} />
             <YAxis yAxisId="soc" orientation="right" stroke={axisColor} fontSize={11} tickLine={false} unit="%" domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} />
             <Tooltip
-              contentStyle={tooltipStyle(isDark)}
+              contentStyle={tooltipStyle()}
               formatter={(val, name) => {
                 if (name === 'power') {
                   const direction = val > 0 ? 'Charging' : val < 0 ? 'Discharging' : 'Idle';
@@ -420,7 +420,7 @@ export default function SiteDashboard() {
               unit="%"
             />
             <Tooltip
-              contentStyle={tooltipStyle(isDark)}
+              contentStyle={tooltipStyle()}
               formatter={(val, name) => [`${val}%`, name]}
             />
             <Legend wrapperStyle={{ fontSize: '11px' }} iconType="circle" />
@@ -429,10 +429,10 @@ export default function SiteDashboard() {
               dataKey="predictedRTE"
               name="Predicted RTE"
               type="monotone"
-              stroke="#06b6d4"
+              stroke="var(--app-accent)"
               strokeWidth={2}
               strokeDasharray="4 4"
-              dot={{ r: 3, fill: '#06b6d4' }}
+              dot={{ r: 3, fill: 'var(--app-accent)' }}
             />
           </ComposedChart>
         </ResponsiveContainer>

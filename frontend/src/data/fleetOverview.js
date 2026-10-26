@@ -30,7 +30,7 @@ export const mockFleetOverview = {
     { day: 'Sun', charged: 218, discharged: 201 },
   ],
   fleetStatusCounts: [
-    { name: 'Discharging', value: 1, fill: '#06b6d4' },
+    { name: 'Discharging', value: 1, fill: 'var(--app-accent)' },
     { name: 'Charging', value: 1, fill: '#10b981' },
     { name: 'Offline', value: 1, fill: '#64748b' },
     { name: 'Fault', value: 1, fill: '#ef4444' },

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bot, MessageCircle, RotateCcw, Send, Sparkles, X } from 'lucide-react';
+import { Bot, MessageCircle, RotateCcw, Send, X } from 'lucide-react';
 
 const welcome = {
   role: 'assistant',
@@ -39,7 +39,7 @@ export default function ChatAssistant() {
   const sendMessage = (value = draft) => {
     const text = value.trim();
     if (!text) return;
-    setMessages((current) => [...current, { role: 'user', text }, { role: 'assistant', text: getDemoReply(text) }]);
+    setMessages((current) => [...current, { role: 'user', text }, { role: 'assistant', text: getDemoReply(text) }].slice(-41));
     setDraft('');
   };
 
@@ -48,7 +48,7 @@ export default function ChatAssistant() {
   return (
     <div className="fixed bottom-4 right-4 z-[1200] sm:bottom-6 sm:right-6">
       {open && (
-        <section aria-label="BESS operations assistant" className="mb-3 flex h-[min(560px,calc(100dvh-6rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-950/20 dark:border-slate-700 dark:bg-slate-900">
+        <section aria-label="BESS operations assistant" className="mb-3 flex h-[min(560px,calc(100dvh-6rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg shadow-slate-950/10 dark:border-slate-700 dark:bg-slate-900">
           <header className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/80">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-600 text-white"><Bot className="h-5 w-5" /></span>
@@ -68,7 +68,7 @@ export default function ChatAssistant() {
             ))}
             {messages.length === 1 && (
               <div className="pt-1">
-                <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><Sparkles className="h-3 w-3" />Try asking</p>
+                <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400"><MessageCircle className="h-3 w-3" />Try asking</p>
                 <div className="flex flex-wrap gap-2">{suggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => sendMessage(suggestion)} className="rounded-full border border-slate-200 px-3 py-1.5 text-[10px] font-medium text-slate-600 transition-colors hover:border-cyan-400 hover:bg-cyan-50 hover:text-cyan-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-300">{suggestion}</button>)}</div>
               </div>
             )}
@@ -82,7 +82,7 @@ export default function ChatAssistant() {
           </form>
         </section>
       )}
-      <button type="button" onClick={() => setOpen((value) => !value)} aria-label={open ? 'Close BESS Copilot' : 'Open BESS Copilot'} aria-expanded={open} className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-cyan-700 text-white shadow-lg shadow-cyan-950/25 transition hover:scale-105 hover:bg-cyan-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-500/30">
+      <button type="button" onClick={() => setOpen((value) => !value)} aria-label={open ? 'Close BESS Copilot' : 'Open BESS Copilot'} aria-expanded={open} className="ml-auto flex h-14 w-14 items-center justify-center rounded-xl bg-cyan-700 text-white shadow-md transition-colors hover:bg-cyan-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-500/30">
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </button>
     </div>

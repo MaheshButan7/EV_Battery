@@ -71,7 +71,10 @@ function makeSitePowerProfile(site) {
   return calculate(low).profile;
 }
 
+const siteDetailCache = new Map();
+
 export async function getSite(id) {
+  if (siteDetailCache.has(id)) return Promise.resolve(siteDetailCache.get(id));
   const site = mockSites.find((s) => s.id === id) || mockSites[0];
   const containers = generatePackData(site.id);
   const rackCount = containers.reduce((sum, container) => sum + container.racks.length, 0);
@@ -189,7 +192,7 @@ export async function getSite(id) {
     },
   };
 
-  return Promise.resolve({
+  const siteDetail = {
     ...site,
     energyTodayMWh: site.id === 'BESS-JODHUR'
       ? bess103Equipment.energyMeter.todayChargedMWh + bess103Equipment.energyMeter.todayDischargedMWh
@@ -204,7 +207,9 @@ export async function getSite(id) {
     equipment,
     workOrders: bess103WorkOrders,
     predictedAnomalies: bess103SystemAnomalies,
-  });
+  };
+  siteDetailCache.set(id, siteDetail);
+  return Promise.resolve(siteDetail);
 }
 
 export async function getSiteAlarms(id) {

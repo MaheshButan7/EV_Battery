@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, Bell, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Menu, ChevronLeft, ChevronRight } from 'lucide-react';
 import ThemeToggle from '../ThemeToggle';
+import NotificationCenter from './NotificationCenter';
 import { useDemoData } from '../../hooks/useDemoData';
 
 export default function Header({ onMenuClick, collapsed, onToggleSidebar }) {
   const location = useLocation();
+  const insightSiteScope = location.pathname === '/ai-insights' && new URLSearchParams(location.search).get('scope') === 'site';
   const navigate = useNavigate();
-  const { lastUpdated, connection, alarms, selectedSite, accessibleSites, selectedSiteId, selectSite } = useDemoData();
-  const activeAlarmCount = alarms.filter((alarm) => alarm.state === 'Active').length;
+  const { connection, selectedSite, accessibleSites, selectedSiteId, selectSite } = useDemoData();
   const isSitePage = location.pathname.startsWith('/site/');
   const siteIdMatch = isSitePage ? location.pathname.split('/site/')[1]?.split('/')[0] : null;
   const site = selectedSite?.id === siteIdMatch ? selectedSite : null;
@@ -22,6 +23,7 @@ export default function Header({ onMenuClick, collapsed, onToggleSidebar }) {
     '/maintenance/permits': 'Permit-to-Work',
     '/inventory': 'Inventory',
     '/analytics': 'Performance Analytics',
+    '/ai-insights': 'AI Insights',
     '/history': 'Historical Trends',
     '/reports': 'Reports',
     '/executive': 'Executive Reporting',
@@ -43,10 +45,11 @@ export default function Header({ onMenuClick, collapsed, onToggleSidebar }) {
     '/maintenance/permits',
     '/inventory',
     '/analytics',
+    '/ai-insights',
     '/history',
     '/reports',
   ];
-  const showSiteSelector = isSitePage || siteContextPaths.includes(location.pathname);
+  const showSiteSelector = isSitePage || (location.pathname === '/ai-insights' ? insightSiteScope : siteContextPaths.includes(location.pathname));
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSiteChange = (nextSiteId) => {
@@ -62,10 +65,10 @@ export default function Header({ onMenuClick, collapsed, onToggleSidebar }) {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex min-h-[4.5rem] flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-slate-200/80 bg-[var(--app-header)] px-3 py-2 backdrop-blur-xl transition-colors dark:border-slate-800/80 sm:px-4 md:h-[4.5rem] md:flex-nowrap md:py-0 lg:px-8">
+    <header className="sticky top-0 z-20 flex min-h-[4.5rem] flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-slate-200/80 bg-[var(--app-header)] px-3 py-2 transition-colors dark:border-slate-800/80 sm:px-4 md:h-[4.5rem] md:flex-nowrap md:py-0 lg:px-8">
       {/* Left: Mobile menu + Breadcrumbs */}
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-        <div className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 lg:flex" title={`Last data refresh ${lastUpdated.toLocaleTimeString()}`}>
+        <div className="hidden items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 lg:flex" title="Demo data connection status">
           <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
           {connection}
         </div>
@@ -123,20 +126,7 @@ export default function Header({ onMenuClick, collapsed, onToggleSidebar }) {
           </label>
         )}
 
-        {/* Notification bell */}
-        <button
-          type="button"
-          onClick={() => navigate('/alarms')}
-          className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100 hover:text-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-cyan-400"
-          aria-label="View notifications"
-        >
-          <Bell className="w-5 h-5" />
-          {activeAlarmCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">
-              {activeAlarmCount}
-            </span>
-          )}
-        </button>
+        <NotificationCenter />
 
         <ThemeToggle />
 

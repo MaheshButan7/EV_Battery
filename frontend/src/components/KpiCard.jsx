@@ -15,7 +15,7 @@ const colorMap = {
   installedCapacity: { bg: 'bg-cyan-500/10 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-400', glow: 'border-cyan-500/20' },
   avgFleetSoh: { bg: 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400', glow: 'border-emerald-500/20' },
   activeAlarms: { bg: 'bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400', glow: 'border-rose-500/20' },
-  fleetAvailability: { bg: 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400', glow: 'border-indigo-500/20' },
+  fleetAvailability: { bg: 'bg-slate-500/10 dark:bg-slate-500/15 text-slate-600 dark:text-slate-300', glow: 'border-slate-500/20' },
 };
 
 export default function KpiCard({ type, label, value, delta, deltaType, suffix = '' }) {
@@ -23,13 +23,13 @@ export default function KpiCard({ type, label, value, delta, deltaType, suffix =
   const style = colorMap[type] || colorMap.totalSites;
 
   return (
-    <div className="surface-card group relative flex flex-col justify-between overflow-hidden border p-5 hover:-translate-y-0.5">
+    <div className="surface-card relative flex flex-col justify-between overflow-hidden border p-5">
       {/* Top Header Row */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <span className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-500 dark:text-slate-400">
           {label}
         </span>
-        <div className={`p-2.5 rounded-xl ${style.bg} transition-transform group-hover:scale-105 duration-200`}>
+        <div className={`p-2.5 rounded-lg ${style.bg}`}>
           <Icon className="h-[18px] w-[18px]" />
         </div>
       </div>

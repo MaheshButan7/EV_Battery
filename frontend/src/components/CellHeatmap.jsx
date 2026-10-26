@@ -106,7 +106,7 @@ export default function CellHeatmap({ containers = [], siteId }) {
             { key: 'temperature', icon: Flame, iconClass: 'text-amber-500', label: 'Temperature' },
             { key: 'voltage', icon: Zap, iconClass: 'text-cyan-500', label: 'Voltage' },
             { key: 'internalResistance', icon: Activity, iconClass: 'text-emerald-500', label: 'IR (mΩ)' },
-            { key: 'balance', icon: Activity, iconClass: 'text-violet-500', label: 'Balancing' },
+            { key: 'balance', icon: Activity, iconClass: 'text-blue-500', label: 'Balancing' },
             { key: 'health', icon: AlertTriangle, iconClass: 'text-rose-500', label: 'Health / risk' },
           ].map(({ key, icon: Icon, iconClass, label }) => (
             <button
@@ -132,7 +132,7 @@ export default function CellHeatmap({ containers = [], siteId }) {
       </div>
 
       {/* Hover strip */}
-      <div className="sticky top-0 z-20 min-h-[52px] px-4 py-2.5 rounded-xl border border-cyan-500/25 bg-slate-100/95 text-xs shadow-md backdrop-blur-sm dark:border-cyan-400/25 dark:bg-slate-800/95 flex items-center">
+      <div className="sticky top-0 z-20 min-h-[52px] px-4 py-2.5 rounded-xl border border-cyan-500/25 bg-slate-100 text-xs shadow-sm dark:border-cyan-400/25 dark:bg-slate-800 flex items-center">
         {hoveredCell ? (
           <div className="flex flex-col gap-1 w-full">
             <div className="flex flex-wrap items-center justify-between gap-2">

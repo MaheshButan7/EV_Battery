@@ -25,7 +25,7 @@ function loadConfig(key) {
 
 export default function DashboardStudio() {
   const { user } = useAuth();
-  const { accessibleSites, accessibleAlarms } = useDemoData();
+  const { accessibleSites, accessibleAlarms, workOrders } = useDemoData();
   const role = user?.role || 'Control Room Operator';
   const storageKey = `bess-dashboard-config:${role}`;
   const [config, setConfig] = useState(() => loadConfig(storageKey));
@@ -36,7 +36,12 @@ export default function DashboardStudio() {
     availability: accessibleSites.length ? accessibleSites.reduce((sum, site) => sum + site.availability, 0) / accessibleSites.length : 0,
     temperature: accessibleSites.length ? Math.max(...accessibleSites.map((site) => site.temperature)) : 0,
     alarms: accessibleAlarms.filter((alarm) => alarm.state === 'Active').length,
-  }), [accessibleSites, accessibleAlarms]);
+    soc: accessibleSites.length ? accessibleSites.reduce((sum, site) => sum + site.soc, 0) / accessibleSites.length : 0,
+    efficiency: accessibleSites.length ? accessibleSites.reduce((sum, site) => sum + site.roundTripEfficiency, 0) / accessibleSites.length : 0,
+    throughput: accessibleSites.reduce((sum, site) => sum + site.energyTodayMWh, 0),
+    openWorkOrders: workOrders.filter((item) => item.status !== 'Done').length,
+    overdueWorkOrders: workOrders.filter((item) => item.status !== 'Done' && item.dueDate && new Date(`${item.dueDate}T00:00:00`) < new Date(new Date().setHours(0, 0, 0, 0))).length,
+  }), [accessibleSites, accessibleAlarms, workOrders]);
 
   useEffect(() => { setConfig(loadConfig(storageKey)); setSaved(false); }, [storageKey]);
   const moveWidget = (index, direction) => setConfig((current) => {
@@ -55,14 +60,19 @@ export default function DashboardStudio() {
     setKpiForm((current) => ({ ...current, name: '' }));
   };
   const reset = () => { const next = loadConfig(''); setConfig(next); localStorage.removeItem(storageKey); setSaved(true); };
-  const kpiLabels = { soh: 'Fleet SOH (%)', availability: 'Fleet availability (%)', temperature: 'Maximum cell temperature (°C)', alarms: 'Active alarm count' };
+  const kpiLabels = { soh: 'Fleet SOH (%)', availability: 'Fleet availability (%)', temperature: 'Maximum site temperature (°C)', alarms: 'Fleet active alarm count', soc: 'Fleet average SOC (%)', efficiency: 'Fleet round-trip efficiency (%)', throughput: 'Fleet energy delivered today (MWh)', openWorkOrders: 'Selected site open work orders', overdueWorkOrders: 'Selected site overdue work orders' };
+  const formatKpiValue = (value, metric) => {
+    const count = ['alarms', 'openWorkOrders', 'overdueWorkOrders'].includes(metric);
+    const unit = { soh: '%', availability: '%', temperature: '°C', soc: '%', efficiency: '%', throughput: 'MWh' }[metric];
+    return `${Number(value).toFixed(count ? 0 : 1)}${unit ? ` ${unit}` : ''}`;
+  };
 
   return <PageFrame title="Dashboard Studio" description="Choose and arrange dashboard widgets, then save a role-specific view. Changes are stored in this browser for the demo.">
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
       <section className="surface-card min-w-0 rounded-2xl border bg-white p-5 dark:bg-slate-900">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h2 className="flex items-center gap-2 text-sm font-bold"><LayoutDashboard className="h-4 w-4 text-cyan-500" />{role} dashboard preview</h2><p className="mt-1 text-xs text-slate-500">Drag-free ordering controls keep the demo usable on small screens.</p></div><span className="rounded-full bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-700 dark:text-cyan-300">Role view</span></div>
         <div className="grid gap-3 sm:grid-cols-2">{config.widgetIds.map((id, index) => { const widget = widgets.find((item) => item.id === id); if (!widget) return null; const Icon = widget.icon; return <article key={id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-800"><div className="flex items-start justify-between gap-2"><div className="flex items-center gap-2 text-xs font-semibold"><Icon className="h-4 w-4 text-cyan-500" />{widget.label}</div><div className="flex gap-1"><button type="button" aria-label={`Move ${widget.label} up`} onClick={() => moveWidget(index, -1)} disabled={index === 0} className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-30 dark:hover:bg-slate-800"><ArrowUp className="h-3.5 w-3.5" /></button><button type="button" aria-label={`Move ${widget.label} down`} onClick={() => moveWidget(index, 1)} disabled={index === config.widgetIds.length - 1} className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-30 dark:hover:bg-slate-800"><ArrowDown className="h-3.5 w-3.5" /></button></div></div><p className="mt-4 text-2xl font-bold tabular-nums">{widget.value(accessibleSites, accessibleAlarms)}</p><p className="mt-1 text-[10px] text-slate-500">{widget.note}</p></article>; })}
-          {config.kpis.map((kpi) => { const value = metricValues[kpi.metric]; const met = kpi.operator === '<' ? value < kpi.threshold : kpi.operator === '>' ? value > kpi.threshold : value === kpi.threshold; return <article key={kpi.id} className="rounded-xl border border-violet-500/20 bg-violet-500/[0.04] p-4"><div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{kpi.name}</span><span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${met ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}`}>{met ? 'Threshold met' : 'Within range'}</span></div><p className="mt-4 text-2xl font-bold">{Number(value).toFixed(kpi.metric === 'alarms' ? 0 : 1)}</p><p className="mt-1 text-[10px] text-slate-500">{kpiLabels[kpi.metric]} {kpi.operator} {kpi.threshold}</p><button type="button" onClick={() => setConfig((current) => ({ ...current, kpis: current.kpis.filter((item) => item.id !== kpi.id) }))} className="mt-2 text-[10px] font-semibold text-rose-600">Remove KPI</button></article>; })}
+          {config.kpis.map((kpi) => { const value = metricValues[kpi.metric] ?? 0; const met = kpi.operator === '<' ? value < kpi.threshold : kpi.operator === '>' ? value > kpi.threshold : value === kpi.threshold; return <article key={kpi.id} className="rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-4"><div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{kpi.name}</span><span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${met ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}`}>{met ? 'Threshold met' : 'Within range'}</span></div><p className="mt-4 text-2xl font-bold">{formatKpiValue(value, kpi.metric)}</p><p className="mt-1 text-[10px] text-slate-500">{kpiLabels[kpi.metric]} {kpi.operator} {kpi.threshold}</p><button type="button" onClick={() => setConfig((current) => ({ ...current, kpis: current.kpis.filter((item) => item.id !== kpi.id) }))} className="mt-2 text-[10px] font-semibold text-rose-600">Remove KPI</button></article>; })}
         </div>
         <div className="mt-5 flex flex-wrap gap-2"><Button variant="primary" icon={Save} onClick={save}>Save role dashboard</Button><Button variant="secondary" icon={RotateCcw} onClick={reset}>Reset</Button>{saved && <p role="status" className="self-center text-xs text-emerald-700 dark:text-emerald-300"><Check className="mr-1 inline h-3.5 w-3.5" />Saved for {role}</p>}</div>
       </section>

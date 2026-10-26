@@ -17,10 +17,10 @@ export default function RulChart({ series = [], rulYears = 4.2 }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const gridColor = isDark ? '#26364b' : '#e2eaf2';
+  const gridColor = isDark ? 'var(--app-tooltip-border)' : 'var(--app-chart-grid)';
   const textColor = isDark ? '#94a3b8' : '#64748b';
-  const tooltipBg = isDark ? '#0e1a2b' : '#ffffff';
-  const tooltipBorder = isDark ? '#26364b' : '#dfe7f1';
+  const tooltipBg = 'var(--app-tooltip-bg)';
+  const tooltipBorder = 'var(--app-tooltip-border)';
 
   // Format dataset to create confidence area band: [lowerBound, upperBound]
   const chartData = series.map((item) => ({
@@ -62,8 +62,8 @@ export default function RulChart({ series = [], rulYears = 4.2 }) {
           <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="confidenceBandGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.25} />
-                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.03} />
+                <stop offset="5%" stopColor="var(--app-accent)" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="var(--app-accent)" stopOpacity={0.03} />
               </linearGradient>
             </defs>
 
@@ -93,7 +93,7 @@ export default function RulChart({ series = [], rulYears = 4.2 }) {
                 borderColor: tooltipBorder,
                 borderRadius: '0.75rem',
                 fontSize: '12px',
-                color: isDark ? '#f8fafc' : '#172033',
+                color: 'var(--app-tooltip-text)',
                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
               }}
               formatter={(value, name) => {
@@ -151,10 +151,10 @@ export default function RulChart({ series = [], rulYears = 4.2 }) {
               type="monotone"
               dataKey="predicted"
               name="Predicted SoH (ML model)"
-              stroke="#06b6d4"
+              stroke="var(--app-accent)"
               strokeWidth={2.5}
               strokeDasharray="5 5"
-              dot={{ r: 3, fill: '#06b6d4' }}
+              dot={{ r: 3, fill: 'var(--app-accent)' }}
               connectNulls
             />
           </ComposedChart>
