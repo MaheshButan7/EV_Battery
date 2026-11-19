@@ -234,40 +234,6 @@ export default function SiteDashboard() {
               <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</span>
             </div>
 
-            <section className="surface-card rounded-2xl border p-5 lg:p-6">
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-600 dark:text-cyan-400">Battery hierarchy</p>
-                  <h2 className="mt-1 text-sm font-bold text-slate-900 dark:text-white">Container operating summary</h2>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Container-level SOC, maximum temperature and voltage spread for operator triage.</p>
-                </div>
-                <Link to={`/site/${site.id}/battery`} className="text-xs font-semibold text-cyan-700 hover:text-cyan-600 dark:text-cyan-300">Inspect cells →</Link>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[620px] text-left text-xs">
-                  <thead className="border-b border-slate-200 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:border-slate-800 dark:text-slate-500">
-                    <tr>
-                      <th className="pb-3 pr-4">Container</th>
-                      <th className="pb-3 pr-4">Racks</th>
-                      <th className="pb-3 pr-4">SOC</th>
-                      <th className="pb-3 pr-4">Max temperature</th>
-                      <th className="pb-3">Voltage spread</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {site.pack.containerSummary.map((container) => (
-                      <tr key={container.id}>
-                        <td className="py-3 pr-4 font-semibold text-slate-800 dark:text-slate-200">{container.name}</td>
-                        <td className="py-3 pr-4 text-slate-500 dark:text-slate-400">{container.rackCount}</td>
-                        <td className="py-3 pr-4 font-semibold tabular-nums text-slate-800 dark:text-slate-200">{container.soc}%</td>
-                        <td className={`py-3 pr-4 font-semibold tabular-nums ${container.maxTemperature > 45 ? 'text-rose-600 dark:text-rose-300' : 'text-slate-800 dark:text-slate-200'}`}>{container.maxTemperature} °C</td>
-                        <td className={`py-3 font-semibold tabular-nums ${container.voltageSpread > 0.1 ? 'text-amber-600 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'}`}>{container.voltageSpread} V</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
             <span className="text-2xl font-bold leading-none text-slate-900 dark:text-white tabular-nums tracking-tight">
               {value}
             </span>
@@ -275,6 +241,23 @@ export default function SiteDashboard() {
           </div>
         ))}
       </div>
+
+      <section className="surface-card rounded-2xl border p-5 lg:p-6">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-600 dark:text-cyan-400">Battery hierarchy</p>
+                <h2 className="mt-1 text-sm font-bold text-slate-900 dark:text-white">Container operating summary</h2>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Container-level SOC, maximum temperature and voltage spread for operator triage.</p>
+              </div>
+              <Link to={`/site/${site.id}/battery`} className="text-xs font-semibold text-cyan-700 hover:text-cyan-600 dark:text-cyan-300">Inspect cells →</Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px] text-left text-xs">
+                <thead className="border-b border-slate-200 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 dark:border-slate-800 dark:text-slate-500"><tr><th className="pb-3 pr-4">Container</th><th className="pb-3 pr-4">Racks</th><th className="pb-3 pr-4">SOC</th><th className="pb-3 pr-4">Max temperature</th><th className="pb-3">Voltage spread</th></tr></thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{site.pack.containerSummary.map((container) => <tr key={container.id}><td className="py-3 pr-4 font-semibold text-slate-800 dark:text-slate-200">{container.name}</td><td className="py-3 pr-4 text-slate-500 dark:text-slate-400">{container.rackCount}</td><td className="py-3 pr-4 font-semibold tabular-nums text-slate-800 dark:text-slate-200">{container.soc}%</td><td className={`py-3 pr-4 font-semibold tabular-nums ${container.maxTemperature > 45 ? 'text-rose-600 dark:text-rose-300' : 'text-slate-800 dark:text-slate-200'}`}>{container.maxTemperature} °C</td><td className={`py-3 font-semibold tabular-nums ${container.voltageSpread > 0.1 ? 'text-amber-600 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'}`}>{container.voltageSpread} V</td></tr>)}</tbody>
+              </table>
+            </div>
+          </section>
 
       {/* ── Row 2: 24h Power/SoC Profile ──────────────────────────────── */}
       <ChartCard

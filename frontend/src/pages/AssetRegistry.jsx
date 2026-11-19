@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Barcode, CalendarDays, ChevronRight, Clock3, History, Search, ShieldCheck, Wrench } from 'lucide-react';
 import PageFrame from '../components/ui/PageFrame';
 import { useDemoData } from '../hooks/useDemoData';
+import { getDemoNow, getDemoToday } from '../config';
 
 const assetTypes = ['All', 'Site', 'Container', 'Rack', 'Module', 'Cell', 'BMS', 'PCS', 'Transformer', 'Switchgear', 'Protection Relay', 'Energy Meter', 'HVAC', 'Fire System', 'UPS', 'Gateway', 'Network Equipment', 'Sensor', 'Auxiliary Power'];
 
@@ -37,8 +38,8 @@ function makeAsset(site, suffix, name, type, parentId, options = {}) {
     hierarchy: [...(parent?.hierarchy || []), name],
     commissionedDate,
     warrantyExpiry: options.warrantyYears ? addYears(commissionedDate, options.warrantyYears) : '—',
-    lastServiceDate: addDays(new Date().toISOString().slice(0, 10), -(options.lastServiceDays ?? 45)),
-    nextServiceDate: addDays(new Date().toISOString().slice(0, 10), options.nextServiceDays ?? 30),
+    lastServiceDate: addDays(getDemoToday(), -(options.lastServiceDays ?? 45)),
+    nextServiceDate: addDays(getDemoToday(), options.nextServiceDays ?? 30),
     health: options.health ?? site.healthIndex,
     status: options.status || 'Healthy',
     manufacturer: options.manufacturer || site.oem,
@@ -49,9 +50,9 @@ function makeAsset(site, suffix, name, type, parentId, options = {}) {
     designLifeYears: options.designLife || (type === 'Cell' || type === 'Module' || type === 'Rack' ? 15 : 20),
     criticality: options.criticality || (['BMS', 'PCS', 'Fire System', 'Protection Relay'].includes(type) ? 'High' : 'Medium'),
     rul: options.rul ?? Math.max(1, site.rul - ((options.serial || 1) % 4) * 0.4),
-    inspections: [{ date: addDays(new Date().toISOString().slice(0, 10), -30), result: options.status === 'Attention' ? 'Action required' : 'Passed', type: 'Routine inspection' }],
-    failures: options.status === 'Attention' ? [{ date: addDays(new Date().toISOString().slice(0, 10), -8), event: 'Condition alert opened', state: 'Under review' }] : [],
-    calibration: type === 'BMS' || type === 'Energy Meter' ? { last: addDays(new Date().toISOString().slice(0, 10), -90), next: addDays(new Date().toISOString().slice(0, 10), 275), status: 'Current' } : null,
+    inspections: [{ date: addDays(getDemoToday(), -30), result: options.status === 'Attention' ? 'Action required' : 'Passed', type: 'Routine inspection' }],
+    failures: options.status === 'Attention' ? [{ date: addDays(getDemoToday(), -8), event: 'Condition alert opened', state: 'Under review' }] : [],
+    calibration: type === 'BMS' || type === 'Energy Meter' ? { last: addDays(getDemoToday(), -90), next: addDays(getDemoToday(), 275), status: 'Current' } : null,
     documents: [`${type} operation manual`, 'Commissioning certificate'],
     photo: `${name} · demo equipment photo`,
   };
@@ -112,7 +113,7 @@ export default function AssetRegistry() {
   const attentionCount = assets.filter((asset) => asset.status === 'Attention' || asset.status === 'Offline' || asset.health < 80).length;
   const expiringWarrantyCount = assets.filter((asset) => {
     if (asset.warrantyExpiry === '—') return false;
-    const remaining = new Date(`${asset.warrantyExpiry}T00:00:00`) - new Date();
+    const remaining = new Date(`${asset.warrantyExpiry}T00:00:00`) - getDemoNow();
     return remaining >= 0 && remaining <= 365 * 24 * 60 * 60 * 1000;
   }).length;
   const historyOrders = selectedAsset

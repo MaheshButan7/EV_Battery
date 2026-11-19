@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PageFrame from '../components/ui/PageFrame';
 import Button from '../components/ui/Button';
 import { useDemoData } from '../hooks/useDemoData';
+import { getDemoNow } from '../config';
 import { Camera, Check, Cloud, CloudOff, QrCode, RefreshCw, PenLine } from 'lucide-react';
 
 export default function FieldMode() {
@@ -18,13 +19,17 @@ export default function FieldMode() {
   const currentOrder = workOrders.find((item) => item.id === workOrderId);
   const saveInspection = () => {
     if (!assetCode.trim() || !currentOrder) { setNotice('Scan or enter an asset code and select a linked work order.'); return; }
+    if (!Object.values(checklist).every(Boolean) || !signature.trim()) {
+      setNotice('Complete all safety checklist items and enter the technician signature before saving the inspection.');
+      return;
+    }
     if (offline) { setQueued(true); setNotice('Inspection saved to the local demo queue. Sync when online.'); return; }
     updateWorkOrderDetails(currentOrder.id, { fieldAssetCode: assetCode, photoEvidence: photo, signature, fieldChecklist: checklist });
     setNotice('Inspection record synced to the demo work order.');
   };
   const syncQueue = () => {
     if (!currentOrder || !queued) return;
-    updateWorkOrderDetails(currentOrder.id, { fieldAssetCode: assetCode, photoEvidence: photo, signature, fieldChecklist: checklist, offlineSyncedAt: new Date().toISOString() });
+    updateWorkOrderDetails(currentOrder.id, { fieldAssetCode: assetCode, photoEvidence: photo, signature, fieldChecklist: checklist, offlineSyncedAt: getDemoNow().toISOString() });
     setQueued(false);
     setNotice('Offline inspection queue synchronized.');
   };

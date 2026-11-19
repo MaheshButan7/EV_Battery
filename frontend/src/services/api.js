@@ -187,16 +187,14 @@ export async function getSite(id) {
       smokeDetector: site.id === 'BESS-JODHUR' ? 'Normal' : 'Normal',
       gasDetector: site.id === 'BESS-JODHUR' ? 'Normal' : 'Normal',
       emergencySystem: 'Available',
-      weather: ({ 'BESS-PUNE': '31 °C · Clear', 'BESS-JODHUR': '36 °C · Dry', 'BESS-CHENNAI': '29 °C · Humid', 'BESS-RAIPUR': '32 °C · Cloudy' })[site.id] || '32 °C · Clear',
+      weather: ({ 'BESS-PUNE': '31 °C · Clear', 'BESS-JODHUR': '36 °C · Dry', 'BESS-CHENNAI': '29 °C · Humid', 'BESS-RAIPUR': '32 °C · Cloudy', 'BESS-AHMEDABAD': '30 °C · Clear', 'BESS-HYDERABAD': '31 °C · Dry' })[site.id] || '32 °C · Clear',
       securitySensors: 'Normal',
     },
   };
 
   const siteDetail = {
     ...site,
-    energyTodayMWh: site.id === 'BESS-JODHUR'
-      ? bess103Equipment.energyMeter.todayChargedMWh + bess103Equipment.energyMeter.todayDischargedMWh
-      : site.energyTodayMWh,
+    energyTodayMWh: site.energyTodayMWh,
     pack: { containers, containerSummary, rackSummary },
     soeMWh: +(site.capacityMWh * (site.soc / 100) * (site.soh / 100)).toFixed(1),
     maxCellTemperature: +maxCellTemperature.toFixed(1),

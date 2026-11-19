@@ -4,12 +4,13 @@ import { AlertTriangle, CalendarDays, Camera, ClipboardCheck, ClipboardList, His
 import PageFrame from '../components/ui/PageFrame';
 import Button from '../components/ui/Button';
 import { useDemoData } from '../hooks/useDemoData';
+import { getDemoNow } from '../config';
 
 const statuses = ['New', 'Scheduled', 'Assigned', 'In progress', 'Waiting parts', 'Waiting approval', 'Done'];
 const technicians = ['Unassigned', 'R. Mehta', 'P. Kumar', 'S. Patil', 'A. Rao', 'N. Iyer', 'V. Shah'];
 
 function addDays(days) {
-  const date = new Date();
+  const date = getDemoNow();
   date.setHours(12, 0, 0, 0);
   date.setDate(date.getDate() + days);
   return date.toISOString().slice(0, 10);
@@ -22,7 +23,7 @@ function formatDate(value) {
 function isOverdue(workOrder) {
   if (workOrder.status === 'Done' || !workOrder.dueDate) return false;
   const due = new Date(`${workOrder.dueDate}T00:00:00`);
-  const today = new Date();
+  const today = getDemoNow();
   today.setHours(0, 0, 0, 0);
   return due < today;
 }
@@ -82,7 +83,7 @@ export default function Maintenance() {
     if (filter === 'Open') return item.status !== 'Done';
     return item.status === filter;
   });
-  const calendarEnd = new Date();
+  const calendarEnd = getDemoNow();
   calendarEnd.setHours(23, 59, 59, 999);
   calendarEnd.setDate(calendarEnd.getDate() + (calendarView === 'Day' ? 1 : calendarView === 'Week' ? 7 : 30));
   const calendarItems = [

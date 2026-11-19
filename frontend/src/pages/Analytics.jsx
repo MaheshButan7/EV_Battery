@@ -17,6 +17,7 @@ import PageFrame from '../components/ui/PageFrame';
 import ChartCard from '../components/ChartCard';
 import { useDemoData } from '../hooks/useDemoData';
 import { useTheme } from '../hooks/useTheme';
+import { getDemoNow } from '../config';
 
 const prioritySeries = [
   { key: 'Critical', color: '#e11d48' },
@@ -28,7 +29,7 @@ const prioritySeries = [
 const MINUTE = 60 * 1000;
 
 function getMonthLabel(offset) {
-  const date = new Date();
+  const date = getDemoNow();
   date.setMonth(date.getMonth() + offset);
   return date.toLocaleDateString(undefined, { month: 'short' });
 }
@@ -72,7 +73,7 @@ function makeEnergyProfile(site) {
 }
 
 function makeSocTrend(site) {
-  const now = new Date();
+  const now = getDemoNow();
   return Array.from({ length: 13 }, (_, index) => {
     const progress = index / 12;
     const hoursAgo = (12 - index) * 2;
@@ -83,7 +84,7 @@ function makeSocTrend(site) {
 }
 
 function makeAlarmTrend(alarms) {
-  const today = new Date();
+  const today = getDemoNow();
   today.setHours(0, 0, 0, 0);
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(today.getTime() - (6 - index) * 24 * 60 * MINUTE);
@@ -104,7 +105,7 @@ function makeAlarmTrend(alarms) {
 function isOverdue(workOrder) {
   if (!workOrder.dueDate || workOrder.status === 'Done') return false;
   const due = new Date(`${workOrder.dueDate}T00:00:00`);
-  const today = new Date();
+  const today = getDemoNow();
   today.setHours(0, 0, 0, 0);
   return due < today;
 }

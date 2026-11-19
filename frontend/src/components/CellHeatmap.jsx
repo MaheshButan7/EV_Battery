@@ -165,7 +165,7 @@ export default function CellHeatmap({ containers = [], siteId }) {
           <div key={module.id} className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-2.5 pb-1.5 border-b border-slate-100 dark:border-slate-800">
               <span className="text-xs font-semibold text-slate-900 dark:text-white">{module.name}</span>
-              <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">12 Cells</span>
+              <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">50 Cells</span>
             </div>
             <div className="grid grid-cols-4 gap-1.5">
               {module.cells.map((cell) => (

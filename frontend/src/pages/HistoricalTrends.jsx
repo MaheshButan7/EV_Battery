@@ -6,6 +6,7 @@ import ChartCard from '../components/ChartCard';
 import Button from '../components/ui/Button';
 import { useDemoData } from '../hooks/useDemoData';
 import { useTheme } from '../hooks/useTheme';
+import { getDemoNow, getDemoToday } from '../config';
 import { getSite } from '../services/api';
 
 const MINUTE = 60 * 1000;
@@ -166,7 +167,7 @@ function generateSeries({ site, asset, signal, range, resolution, customStart, c
     : rangeOptions[range];
   const step = rangeConfig.resolutions.find((item) => item.value === resolution)?.ms || rangeConfig.resolutions[0].ms;
   const count = Math.ceil(rangeConfig.duration / step) + 1;
-  const end = range === 'custom' ? new Date(`${customEnd}T23:59:59`).getTime() : Date.now();
+  const end = range === 'custom' ? new Date(`${customEnd}T23:59:59`).getTime() : getDemoNow().getTime();
   const start = range === 'custom' ? new Date(`${customStart}T00:00:00`).getTime() : end - rangeConfig.duration;
   const random = makeRandom(createSeed(`${site.id}:${asset}:${signal}:${range}:${resolution}:${customStart}:${customEnd}`));
   const base = signalBase(site, asset, signal);
@@ -238,8 +239,8 @@ export default function HistoricalTrends() {
   const [comparisonAssets, setComparisonAssets] = useState([]);
   const [comparisonNotice, setComparisonNotice] = useState('');
   const [selectedSignals, setSelectedSignals] = useState(['cellTemperature']);
-  const today = new Date().toISOString().slice(0, 10);
-  const weekAgo = new Date(Date.now() - 7 * DAY).toISOString().slice(0, 10);
+  const today = getDemoToday();
+  const weekAgo = new Date(getDemoNow().getTime() - 7 * DAY).toISOString().slice(0, 10);
   const [customStart, setCustomStart] = useState(weekAgo);
   const [customEnd, setCustomEnd] = useState(today);
   const [resolution, setResolution] = useState('5m');

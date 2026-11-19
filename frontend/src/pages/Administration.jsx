@@ -3,14 +3,12 @@ import PageFrame from '../components/ui/PageFrame';
 import { Activity, BellRing, CheckCircle2, Database, KeyRound, Network, ShieldCheck, Users } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useDemoData } from '../hooks/useDemoData';
+import { useAuth } from '../hooks/useAuth';
 
 const tabs = ['Users & Roles', 'Thresholds', 'Integrations', 'Notifications', 'Security', 'Audit Log', 'System Health'];
 const users = [
-  ['Anita Rao', 'Administrator', 'All sites', 'Active'],
-  ['Rahul Mehta', 'Control Room Operator', 'Pune, Jodhpur', 'Active'],
-  ['Priya Kumar', 'Maintenance Planner', 'All sites', 'Active'],
-  ['Vikram Shah', 'Reliability Manager', 'All sites', 'Active'],
-  ['Neha Iyer', 'Executive', 'Read-only', 'Active'],
+  ['Anita Rao', 'Super User', 'All authorised sites', 'Active'],
+  ['Priya Kumar', 'Admin (CMMS)', 'All assigned demo sites', 'Active'],
 ];
 const protocols = ['Modbus TCP', 'Modbus RTU', 'IEC 61850', 'IEC 60870-5-104', 'DNP3', 'MQTT', 'OPC UA', 'REST API', 'SNMP', 'BACnet', 'CAN Bus', 'EtherNet/IP'];
 
@@ -22,20 +20,85 @@ export default function Administration() {
   const [connectionStates, setConnectionStates] = useState({ SCADA: 'Connected', EMS: 'Connected', 'REST API': 'Connected', GIS: 'Not configured' });
   const [adminNotice, setAdminNotice] = useState('');
   const [notifications, setNotifications] = useState([
-    { role: 'Control Room Operator', site: 'All sites', severity: 'Critical', delay: 0, channels: ['In-app', 'Email'] },
-    { role: 'Maintenance Planner', site: 'All sites', severity: 'Major', delay: 15, channels: ['In-app', 'Email'] },
-    { role: 'Site / Field Engineer', site: 'Jodhpur', severity: 'Warning', delay: 30, channels: ['In-app', 'Push'] },
+    { role: 'Super User', site: 'All authorised sites', severity: 'Critical', delay: 0, channels: ['In-app', 'Email'] },
+    { role: 'Admin (CMMS)', site: 'Assigned demo sites', severity: 'Major', delay: 15, channels: ['In-app', 'Email'] },
   ]);
+  const { user } = useAuth();
   const { accessibleSites, events } = useDemoData();
   return (
     <PageFrame title="Administration" description="Users, thresholds, integrations, audit history, and system health.">
       <div className="flex flex-wrap gap-2" role="tablist">{tabs.map((item) => <Button key={item} size="sm" variant={tab === item ? 'primary' : 'secondary'} role="tab" aria-selected={tab === item} onClick={() => setTab(item)}>{item}</Button>)}</div>
-      {tab === 'Users & Roles' && <div className="surface-card overflow-x-auto rounded-2xl border bg-white p-5 dark:bg-slate-900"><div className="mb-4 flex items-center gap-2"><Users className="h-5 w-5 text-cyan-500" /><h2 className="text-base font-bold">Users and role access</h2></div><table className="w-full min-w-[650px] text-xs"><thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-800"><th className="pb-3">User</th><th className="pb-3">Role</th><th className="pb-3">Site access</th><th className="pb-3">Status</th></tr></thead><tbody>{users.map(([name, role, access, status]) => <tr key={name} className="border-b border-slate-100 dark:border-slate-800"><td className="py-3 font-semibold">{name}</td><td className="py-3">{role}</td><td className="py-3">{access}</td><td className="py-3 text-emerald-600">{status}</td></tr>)}</tbody></table><div className="mt-6"><h3 className="text-sm font-bold">Permission matrix</h3><div className="mt-3 overflow-x-auto"><table className="w-full min-w-[720px] text-[10px]"><thead><tr className="border-b border-slate-200 text-left uppercase tracking-wide text-slate-500 dark:border-slate-800"><th className="pb-2">Role</th><th className="pb-2">View dashboards</th><th className="pb-2">Acknowledge alarms</th><th className="pb-2">Execute work</th><th className="pb-2">Approve PTW</th><th className="pb-2">Administer</th></tr></thead><tbody>{[['Operator', 'Yes', 'Yes', 'Create', 'No', 'No'], ['Field Engineer', 'Yes', 'Yes', 'Yes', 'Request', 'No'], ['Maintenance Planner', 'Yes', 'Yes', 'Plan / assign', 'Approve', 'No'], ['Executive', 'Read only', 'No', 'No', 'No', 'No'], ['Administrator', 'Yes', 'Yes', 'Yes', 'Yes', 'Yes']].map((row) => <tr key={row[0]} className="border-b border-slate-100 dark:border-slate-800">{row.map((cell, index) => <td key={`${row[0]}-${index}`} className="py-2.5">{cell}</td>)}</tr>)}</tbody></table></div></div><div className="mt-5 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-xs text-cyan-800 dark:text-cyan-200"><ShieldCheck className="mb-1 h-4 w-4" /> Demo role switching changes visible navigation and actions. Production authentication and authorization are not connected.</div></div>}
+      {tab === 'Users & Roles' && (
+        <div className="surface-card overflow-x-auto rounded-2xl border bg-white p-5 dark:bg-slate-900">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-cyan-500" />
+              <h2 className="text-base font-bold">Users and role access</h2>
+            </div>
+            <div className="rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:border-slate-700">
+              Current demo role
+              <span className="ml-2 normal-case tracking-normal text-slate-900 dark:text-slate-100">{user?.role || 'Not signed in'}</span>
+            </div>
+          </div>
+          <table className="w-full min-w-[650px] text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-800">
+                <th className="pb-3">User</th>
+                <th className="pb-3">Role</th>
+                <th className="pb-3">Site access</th>
+                <th className="pb-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(([name, role, access, status]) => (
+                <tr key={name} className="border-b border-slate-100 dark:border-slate-800">
+                  <td className="py-3 font-semibold">{name}</td>
+                  <td className="py-3">{role}</td>
+                  <td className="py-3">{access}</td>
+                  <td className="py-3 text-emerald-600">{status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-6">
+            <h3 className="text-sm font-bold">Permission matrix</h3>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[720px] text-[10px]">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left uppercase tracking-wide text-slate-500 dark:border-slate-800">
+                    <th className="pb-2">Role</th>
+                    <th className="pb-2">View dashboards</th>
+                    <th className="pb-2">Acknowledge alarms</th>
+                    <th className="pb-2">Execute work</th>
+                    <th className="pb-2">Approve PTW</th>
+                    <th className="pb-2">Administer</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Super User', 'Yes', 'Yes', 'Yes', 'Yes', 'Yes'],
+                    ['Admin (CMMS)', 'Yes', 'Yes', 'Plan / execute', 'Approve within assigned scope', 'No platform-wide administration'],
+                  ].map((row) => (
+                    <tr key={row[0]} className="border-b border-slate-100 dark:border-slate-800">
+                      {row.map((cell, index) => <td key={`${row[0]}-${index}`} className="py-2.5">{cell}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="mt-5 rounded-xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-xs text-cyan-800 dark:text-cyan-200">
+            <ShieldCheck className="mb-1 h-4 w-4" />
+            Role switching is not available in this demo. Sign in with a role-specific demo account to preview that role.
+            Production authentication and authorization are not connected.
+          </div>
+        </div>
+      )}
       {tab === 'Thresholds' && <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><h2 className="flex items-center gap-2 text-base font-bold"><KeyRound className="h-5 w-5 text-cyan-500" /> Alarm thresholds and polling</h2><p className="mt-1 text-xs text-slate-500">Editable demo limits. Confirm operational values with the equipment provider.</p><div className="mt-5 grid max-w-3xl gap-4 sm:grid-cols-2 lg:grid-cols-4">{[['temperature', 'Critical cell temperature', '°C'], ['lowVoltage', 'Low cell voltage', 'V'], ['communication', 'Critical communication age', 'min']].map(([key, label, unit]) => <label key={key} className="text-xs font-semibold"><span className="mb-2 block text-slate-500">{label}</span><div className="flex items-center gap-2"><input type="number" value={thresholds[key]} onChange={(event) => setThresholds((current) => ({ ...current, [key]: event.target.value }))} className="w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 dark:border-slate-700" /><span className="text-slate-400">{unit}</span></div></label>)}<label className="text-xs font-semibold"><span className="mb-2 block text-slate-500">Polling interval</span><div className="flex items-center gap-2"><input type="number" min="1" max="300" value={pollingSeconds} onChange={(event) => setPollingSeconds(event.target.value)} className="w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 dark:border-slate-700" /><span className="text-slate-400">sec</span></div></label></div><p className="mt-4 text-[10px] text-slate-500">Polling interval applies to the simulated telemetry view only.</p></div>}
       {tab === 'Integrations' && <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><h2 className="flex items-center gap-2 text-base font-bold"><Network className="h-5 w-5 text-cyan-500" /> Integration catalog</h2><p className="mt-1 text-xs text-slate-500">Connection setup and health are simulated for this demo.</p><div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{['SCADA', 'EMS', 'ERP', 'SAP', 'GIS', ...protocols].map((item) => <div key={item} className="rounded-xl border border-slate-200 p-3 dark:border-slate-800"><div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">{item}</span><span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${connectionStates[item] === 'Connected' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'}`}>{connectionStates[item] || 'Not configured'}</span></div><p className="mt-2 text-[9px] text-slate-500">{connectionStates[item] === 'Connected' ? 'Last sync: 2 min ago · latency 1.8 s' : 'No endpoint configured'}</p><div className="mt-3 flex gap-2"><Button size="sm" variant="secondary" onClick={() => { setConnectionStates((current) => ({ ...current, [item]: current[item] === 'Connected' ? 'Disconnected' : 'Connected' })); setAdminNotice(`${item} demo connection status updated.`); }}>{connectionStates[item] === 'Connected' ? 'Disconnect' : 'Connect'}</Button><Button size="sm" variant="subtle" onClick={() => setAdminNotice(`${item} connection test completed in simulated mode.`)}>Test</Button></div></div>)}</div>{adminNotice && <p role="status" className="mt-4 text-xs text-cyan-700 dark:text-cyan-300">{adminNotice}</p>}</div>}
       {tab === 'Notifications' && <div className="surface-card overflow-x-auto rounded-2xl border bg-white p-5 dark:bg-slate-900"><div className="mb-4 flex items-center gap-2"><BellRing className="h-5 w-5 text-cyan-500" /><div><h2 className="text-base font-bold">Notification matrix</h2><p className="mt-1 text-xs text-slate-500">Routing rules for alarm escalation and delivery channels.</p></div></div><table className="w-full min-w-[760px] text-xs"><thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-800"><th className="pb-3">Recipient role</th><th className="pb-3">Site scope</th><th className="pb-3">Minimum severity</th><th className="pb-3">Escalation delay</th><th className="pb-3">Channels</th><th className="pb-3">Enabled</th></tr></thead><tbody>{notifications.map((rule, index) => <tr key={`${rule.role}-${rule.site}`} className="border-b border-slate-100 dark:border-slate-800"><td className="py-3 font-semibold">{rule.role}</td><td className="py-3">{rule.site}</td><td className="py-3">{rule.severity}</td><td className="py-3">{rule.delay} min</td><td className="py-3">{rule.channels.join(', ')}</td><td className="py-3"><input type="checkbox" checked={rule.enabled !== false} onChange={() => setNotifications((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, enabled: item.enabled === false } : item))} aria-label={`Toggle ${rule.role} notification rule`} /></td></tr>)}</tbody></table><div className="mt-4 flex flex-wrap gap-2">{['In-app', 'Email', 'SMS', 'Mobile push', 'WhatsApp (optional)'].map((channel) => <span key={channel} className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{channel}</span>)}</div><p className="mt-4 text-[11px] text-slate-500">Channel delivery is simulated; no external messages are sent.</p></div>}
       {tab === 'Security' && <div className="grid gap-6 xl:grid-cols-2"><div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><h2 className="flex items-center gap-2 text-base font-bold"><ShieldCheck className="h-5 w-5 text-cyan-500" />Authentication and session policy</h2><div className="mt-5 space-y-4"><label className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3 text-xs dark:border-slate-800"><span><strong>Multi-factor authentication</strong><small className="mt-1 block text-[10px] text-slate-500">Simulated account policy</small></span><input type="checkbox" checked={security.mfa} onChange={(event) => setSecurity((current) => ({ ...current, mfa: event.target.checked }))} className="accent-cyan-600" /></label><label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Automatic session timeout (minutes)<input type="number" min="5" value={security.sessionMinutes} onChange={(event) => setSecurity((current) => ({ ...current, sessionMinutes: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label><div className="grid grid-cols-2 gap-3"><label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Failed attempts before lockout<input type="number" min="1" value={security.failedAttempts} onChange={(event) => setSecurity((current) => ({ ...current, failedAttempts: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label><label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">Lockout duration (min)<input type="number" min="1" value={security.lockoutMinutes} onChange={(event) => setSecurity((current) => ({ ...current, lockoutMinutes: event.target.value }))} className="mt-1 block w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-xs normal-case tracking-normal dark:border-slate-700" /></label></div></div></div><div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><h2 className="text-base font-bold">Security controls overview</h2><div className="mt-4 space-y-3">{[['Transport encryption', 'TLS 1.2+ · illustrative'], ['Sensitive data at rest', 'Industry-standard encryption · illustrative'], ['API access', 'Authenticated and scoped · mock configuration'], ['Audit coverage', 'User actions, configuration and security events'], ['Vulnerability management', 'Regular review and patch cycle · proposal evidence']].map(([label, value]) => <div key={label} className="flex flex-wrap justify-between gap-2 border-b border-slate-100 pb-2 text-xs dark:border-slate-800"><span className="font-medium">{label}</span><span className="text-slate-500">{value}</span></div>)}</div><p className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/[0.05] p-3 text-[10px] text-slate-500">These are illustrative settings only; this demo does not enforce MFA, encryption or lockout policies.</p></div></div>}
-      {tab === 'Audit Log' && <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><h2 className="flex items-center gap-2 text-base font-bold"><Database className="h-5 w-5 text-cyan-500" /> Audit log</h2><div className="mt-4 space-y-2">{events.slice(0, 12).map((event) => <div key={event.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 py-3 text-xs dark:border-slate-800"><span>{event.type}{event.siteId ? ` · ${event.siteId}` : ''}{event.alarmId ? ` · ${event.alarmId}` : ''}{event.workOrderId ? ` · ${event.workOrderId}` : ''}</span><span className="font-mono text-slate-400">{new Date(event.timestamp).toLocaleString()} · {event.actor || 'Demo Operator'}</span></div>)}</div></div>}
+      {tab === 'Audit Log' && <div className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><h2 className="flex items-center gap-2 text-base font-bold"><Database className="h-5 w-5 text-cyan-500" /> Audit log</h2><div className="mt-4 space-y-2">{events.slice(0, 12).map((event) => <div key={event.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 py-3 text-xs dark:border-slate-800"><span>{event.type}{event.siteId ? ` · ${event.siteId}` : ''}{event.alarmId ? ` · ${event.alarmId}` : ''}{event.workOrderId ? ` · ${event.workOrderId}` : ''}</span><span className="font-mono text-slate-400">{new Date(event.timestamp).toLocaleString()} · {event.actor || 'Super User'}</span></div>)}</div></div>}
       {tab === 'System Health' && <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">{[['Data service', 'Connected', CheckCircle2], ['Gateway coverage', `${accessibleSites.filter((site) => site.commsStatus === 'Online').length} / ${accessibleSites.length} online`, Activity], ['Data latency', '1.8 seconds', Activity], ['API target', '< 2 seconds', Network]].map(([label, value, Icon]) => <div key={label} className="surface-card rounded-2xl border bg-white p-5 dark:bg-slate-900"><Icon className="h-5 w-5 text-emerald-500" /><p className="mt-3 text-xs uppercase text-slate-500">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div>)}<div className="surface-card col-span-full rounded-2xl border bg-white p-5 dark:bg-slate-900"><h2 className="text-base font-bold">Site gateway status</h2><div className="mt-4 grid gap-2 sm:grid-cols-2">{accessibleSites.map((site) => <div key={site.id} className="flex justify-between rounded-lg border border-slate-200 p-3 text-xs dark:border-slate-800"><span>{site.name}</span><span className={site.commsStatus === 'Offline' ? 'font-bold text-amber-600' : 'font-bold text-emerald-600'}>{site.commsStatus}</span></div>)}</div></div></div>}
     </PageFrame>
   );

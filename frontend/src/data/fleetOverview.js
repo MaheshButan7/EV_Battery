@@ -1,9 +1,9 @@
 export const mockFleetOverview = {
   kpis: {
-    totalSites: { value: '3 / 4', label: 'Sites Online / Total', delta: '3 online · 1 offline', deltaType: 'warning' },
-    installedCapacity: { valueMW: 80, valueMWh: 160, label: 'Installed Capacity', delta: '80 MW / 160 MWh', deltaType: 'neutral' },
+    totalSites: { value: '5 / 6', label: 'Sites Online / Total', delta: '5 online · 1 offline', deltaType: 'warning' },
+    installedCapacity: { valueMW: 375, valueMWh: 750, label: 'Installed Capacity', delta: '375 MW / 750 MWh', deltaType: 'neutral' },
     avgFleetSoh: { value: 92.5, label: 'Average Site SoH', delta: '-0.4% vs last month', deltaType: 'negative' },
-    activeAlarms: { value: 10, criticalCount: 2, label: 'Active Alarms', delta: '2 Critical', deltaType: 'negative' },
+    activeAlarms: { value: 15, criticalCount: 2, label: 'Active Alarms', delta: '2 Critical', deltaType: 'negative' },
     fleetAvailability: { value: 98.7, label: 'Site Availability', delta: '-0.3% vs target 99%', deltaType: 'negative' },
   },
   sohTrend: [
@@ -19,6 +19,8 @@ export const mockFleetOverview = {
     { site: 'JODHUR', soh: 92, fill: '#f59e0b' },
     { site: 'CHENNAI', soh: 95, fill: '#10b981' },
     { site: 'RAIPUR', soh: 86, fill: '#ef4444' },
+    { site: 'AHMEDABAD', soh: 94, fill: '#10b981' },
+    { site: 'HYDERABAD', soh: 93, fill: '#10b981' },
   ],
   energyLast7Days: [
     { day: 'Mon', charged: 310, discharged: 286 },
@@ -30,8 +32,8 @@ export const mockFleetOverview = {
     { day: 'Sun', charged: 218, discharged: 201 },
   ],
   fleetStatusCounts: [
-    { name: 'Discharging', value: 1, fill: 'var(--app-accent)' },
-    { name: 'Charging', value: 1, fill: '#10b981' },
+    { name: 'Discharging', value: 2, fill: 'var(--app-accent)' },
+    { name: 'Charging', value: 2, fill: '#10b981' },
     { name: 'Offline', value: 1, fill: '#64748b' },
     { name: 'Fault', value: 1, fill: '#ef4444' },
   ],

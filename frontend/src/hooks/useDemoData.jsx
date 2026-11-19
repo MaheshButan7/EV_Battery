@@ -3,6 +3,7 @@ import { mockFleetOverview } from '../data/fleetOverview';
 import { bess103WorkOrders } from '../data/siteDetail';
 import { mockSites } from '../data/sites';
 import { useAuth } from './useAuth';
+import { getDemoNow } from '../config';
 
 const DemoDataContext = createContext(null);
 
@@ -41,7 +42,7 @@ const defaultChecklist = (completed = 0) => [
 ];
 
 const workOrderDateOffset = (days) => {
-  const date = new Date();
+  const date = getDemoNow();
   date.setHours(12, 0, 0, 0);
   date.setDate(date.getDate() + days);
   return date.toISOString().slice(0, 10);
@@ -94,16 +95,16 @@ const initialWorkOrders = [...jodhpurWorkOrders, ...otherSiteWorkOrders];
 // Seed operator and inventory history so the demo is populated on first load.
 // These records are intentionally fixed sample data; user actions add new rows in-session.
 const initialEvents = [
-  { id: 'EVT-DEMO-001', timestamp: '2026-10-21T08:42:00.000Z', type: 'Alarm acknowledged', alarmId: 'ALM-JOD-002', siteId: 'BESS-JODHUR', actor: 'A. Rao' },
-  { id: 'EVT-DEMO-002', timestamp: '2026-10-21T08:18:00.000Z', type: 'Work order created', alarmId: 'ALM-JOD-001', workOrderId: 'WO-2841', siteId: 'BESS-JODHUR', actor: 'Control Room' },
-  { id: 'EVT-DEMO-003', timestamp: '2026-10-21T07:55:00.000Z', type: 'Spare part reserved', partId: 'SP-014', partName: 'HVAC filter kit', siteId: 'BESS-JODHUR', actor: 'R. Mehta' },
-  { id: 'EVT-DEMO-004', timestamp: '2026-10-21T07:31:00.000Z', type: 'Inventory receipt', partId: 'SP-032', partName: 'HVAC filter kit', quantity: 4, siteId: 'BESS-PUNE', actor: 'Store Operator' },
-  { id: 'EVT-DEMO-005', timestamp: '2026-10-21T06:58:00.000Z', type: 'Spare part reserved', partId: 'SP-041', partName: 'Fiber gateway module', siteId: 'BESS-CHENNAI', actor: 'N. Iyer' },
-  { id: 'EVT-DEMO-006', timestamp: '2026-10-21T06:22:00.000Z', type: 'Inventory issue', partId: 'SP-016', partName: 'HVAC blower motor', quantity: 1, siteId: 'BESS-RAIPUR', actor: 'V. Shah' },
-  { id: 'EVT-DEMO-007', timestamp: '2026-10-21T05:47:00.000Z', type: 'Permit updated', permitId: 'PTW-2026-0042', siteId: 'BESS-JODHUR', actor: 'A. Rao' },
-  { id: 'EVT-DEMO-008', timestamp: '2026-10-21T05:16:00.000Z', type: 'Alarm acknowledged', alarmId: 'ALM-CHN-001', siteId: 'BESS-CHENNAI', actor: 'Control Room' },
-  { id: 'EVT-DEMO-009', timestamp: '2026-10-21T04:39:00.000Z', type: 'Inventory adjustment', partId: 'SP-024', partName: 'Thermal sensor harness', quantity: 2, siteId: 'BESS-JODHUR', actor: 'Store Operator' },
-  { id: 'EVT-DEMO-010', timestamp: '2026-10-21T04:02:00.000Z', type: 'Work order status updated', workOrderId: 'WO-2856', siteId: 'BESS-JODHUR', actor: 'R. Mehta' },
+  { id: 'EVT-DEMO-001', timestamp: '2026-11-19T08:42:00.000Z', type: 'Alarm acknowledged', alarmId: 'ALM-JOD-002', siteId: 'BESS-JODHUR', actor: 'A. Rao' },
+  { id: 'EVT-DEMO-002', timestamp: '2026-11-19T08:18:00.000Z', type: 'Work order created', alarmId: 'ALM-JOD-001', workOrderId: 'WO-2841', siteId: 'BESS-JODHUR', actor: 'Control Room' },
+  { id: 'EVT-DEMO-003', timestamp: '2026-11-19T07:55:00.000Z', type: 'Spare part reserved', partId: 'SP-014', partName: 'HVAC filter kit', siteId: 'BESS-JODHUR', actor: 'R. Mehta' },
+  { id: 'EVT-DEMO-004', timestamp: '2026-11-19T07:31:00.000Z', type: 'Inventory receipt', partId: 'SP-032', partName: 'HVAC filter kit', quantity: 4, siteId: 'BESS-PUNE', actor: 'Store Operator' },
+  { id: 'EVT-DEMO-005', timestamp: '2026-11-19T06:58:00.000Z', type: 'Spare part reserved', partId: 'SP-041', partName: 'Fiber gateway module', siteId: 'BESS-CHENNAI', actor: 'N. Iyer' },
+  { id: 'EVT-DEMO-006', timestamp: '2026-11-19T06:22:00.000Z', type: 'Inventory issue', partId: 'SP-016', partName: 'HVAC blower motor', quantity: 1, siteId: 'BESS-RAIPUR', actor: 'V. Shah' },
+  { id: 'EVT-DEMO-007', timestamp: '2026-11-19T05:47:00.000Z', type: 'Permit updated', permitId: 'PTW-2026-0042', siteId: 'BESS-JODHUR', actor: 'A. Rao' },
+  { id: 'EVT-DEMO-008', timestamp: '2026-11-19T05:16:00.000Z', type: 'Alarm acknowledged', alarmId: 'ALM-CHN-001', siteId: 'BESS-CHENNAI', actor: 'Control Room' },
+  { id: 'EVT-DEMO-009', timestamp: '2026-11-19T04:39:00.000Z', type: 'Inventory adjustment', partId: 'SP-024', partName: 'Thermal sensor harness', quantity: 2, siteId: 'BESS-JODHUR', actor: 'Store Operator' },
+  { id: 'EVT-DEMO-010', timestamp: '2026-11-19T04:02:00.000Z', type: 'Work order status updated', workOrderId: 'WO-2856', siteId: 'BESS-JODHUR', actor: 'R. Mehta' },
 ];
 
 const alarmTemplates = [
@@ -126,9 +127,11 @@ const siteAlarmCodes = {
   'BESS-JODHUR': 'JOD',
   'BESS-CHENNAI': 'CHN',
   'BESS-RAIPUR': 'RAI',
+  'BESS-AHMEDABAD': 'AMD',
+  'BESS-HYDERABAD': 'HYD',
 };
 
-const staticAlarmTimestamp = (hoursAgo) => new Date(Date.UTC(2026, 9, 21, 12) - hoursAgo * 60 * 60 * 1000).toISOString();
+const staticAlarmTimestamp = (hoursAgo) => new Date(getDemoNow().getTime() - hoursAgo * 60 * 60 * 1000).toISOString();
 
 function makeInitialAlarms() {
   const alarmsBySite = Object.fromEntries(mockSites.map((site) => [site.id, []]));
@@ -140,7 +143,7 @@ function makeInitialAlarms() {
   mockSites.forEach((site) => {
     const siteAlarms = alarmsBySite[site.id];
     const code = siteAlarmCodes[site.id];
-    for (let index = siteAlarms.length; index < 32; index += 1) {
+    for (let index = siteAlarms.length; index < site.activeAlarms; index += 1) {
       const [title, description, equipment, priority] = alarmTemplates[(index * 7 + mockSites.indexOf(site)) % alarmTemplates.length];
       siteAlarms.push({
         id: `ALM-${code}-${String(index + 1).padStart(3, '0')}`,
@@ -195,61 +198,61 @@ export function DemoDataProvider({ children }) {
   const addEvent = (event) => {
     setEvents((current) => [{
       id: `EVT-${Date.now()}`,
-      timestamp: new Date().toISOString(),
+      timestamp: getDemoNow().toISOString(),
       ...event,
     }, ...current]);
   };
 
-  const acknowledgeAlarm = (alarmId, user = 'Demo Operator') => {
+  const acknowledgeAlarm = (alarmId, user = 'Super User') => {
     setAlarms((current) => current.map((alarm) => (
       alarm.id === alarmId
-        ? { ...alarm, state: 'Acknowledged', acknowledgedAt: new Date().toISOString(), acknowledgedBy: user }
+        ? { ...alarm, state: 'Acknowledged', acknowledgedAt: getDemoNow().toISOString(), acknowledgedBy: user }
         : alarm
     )));
     const alarm = alarms.find((item) => item.id === alarmId);
     if (alarm) addEvent({ type: 'Alarm acknowledged', alarmId, siteId: alarm.siteId, actor: user });
   };
 
-  const updateAlarmState = (alarmId, state, details = {}, user = 'Demo Operator') => {
+  const updateAlarmState = (alarmId, state, details = {}, user = 'Super User') => {
     const alarm = alarms.find((item) => item.id === alarmId);
     if (!alarm || alarm.state === state && !Object.keys(details).length) return;
     setAlarms((current) => current.map((item) => (
       item.id === alarmId
-        ? { ...item, ...details, state, updatedAt: new Date().toISOString(), updatedBy: user }
+        ? { ...item, ...details, state, updatedAt: getDemoNow().toISOString(), updatedBy: user }
         : item
     )));
     addEvent({ type: `Alarm ${state.toLowerCase()}`, alarmId, siteId: alarm.siteId, actor: user, ...details });
   };
 
-  const shelveAlarm = (alarmId, durationMinutes = 60, user = 'Demo Operator') => updateAlarmState(
+  const shelveAlarm = (alarmId, durationMinutes = 60, user = 'Super User') => updateAlarmState(
     alarmId,
     'Shelved',
-    { shelvedUntil: new Date(Date.now() + durationMinutes * 60 * 1000).toISOString(), shelvedForMinutes: durationMinutes },
+    { shelvedUntil: new Date(getDemoNow().getTime() + durationMinutes * 60 * 1000).toISOString(), shelvedForMinutes: durationMinutes },
     user,
   );
 
-  const suppressAlarm = (alarmId, reason = 'Demo suppression rule', user = 'Demo Operator') => updateAlarmState(
+  const suppressAlarm = (alarmId, reason = 'Demo suppression rule', user = 'Super User') => updateAlarmState(
     alarmId,
     'Suppressed',
     { suppressionReason: reason },
     user,
   );
 
-  const escalateAlarm = (alarmId, role = 'Maintenance Planner', user = 'Demo Operator') => updateAlarmState(
+  const escalateAlarm = (alarmId, role = 'Admin (CMMS)', user = 'Super User') => updateAlarmState(
     alarmId,
     'Escalated',
     { escalatedTo: role },
     user,
   );
 
-  const correlateAlarm = (alarmId, parentAlarmId, user = 'Demo Operator') => {
+  const correlateAlarm = (alarmId, parentAlarmId, user = 'Super User') => {
     const alarm = alarms.find((item) => item.id === alarmId);
     const parent = alarms.find((item) => item.id === parentAlarmId);
     if (!alarm || !parent || alarmId === parentAlarmId) return;
     updateAlarmState(alarmId, alarm.state, { correlatedTo: parentAlarmId }, user);
   };
 
-  const createWorkOrderFromAlarm = (alarmId, user = 'Demo Operator') => {
+  const createWorkOrderFromAlarm = (alarmId, user = 'Admin (CMMS)') => {
     const alarm = alarms.find((item) => item.id === alarmId);
     if (!alarm) return null;
 
@@ -267,7 +270,7 @@ export function DemoDataProvider({ children }) {
       type: alarm.priority === 'Critical' ? 'Emergency' : 'Corrective',
       description: alarm.title,
       priority: alarm.priority,
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      dueDate: new Date(getDemoNow().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       assignee: 'Unassigned',
       status: 'New',
       checklist: defaultChecklist(),
@@ -282,7 +285,7 @@ export function DemoDataProvider({ children }) {
     return workOrder;
   };
 
-  const createManualWorkOrder = ({ siteId, assetId, description, priority = 'Major', type = 'Corrective', dueDate, assignee, checklist, sop }, user = 'Demo Operator') => {
+  const createManualWorkOrder = ({ siteId, assetId, description, priority = 'Major', type = 'Corrective', dueDate, assignee, checklist, sop }, user = 'Admin (CMMS)') => {
     const workOrder = {
       id: `WO-${String(Math.max(3000, ...workOrders.map((item) => Number(item.id.replace('WO-', '')) || 0)) + 1).padStart(4, '0')}`,
       siteId,
@@ -290,7 +293,7 @@ export function DemoDataProvider({ children }) {
       type,
       description,
       priority,
-      dueDate: dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      dueDate: dueDate || new Date(getDemoNow().getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       assignee: assignee || 'Unassigned',
       status: 'New',
       checklist: checklist || defaultChecklist(),
@@ -302,7 +305,7 @@ export function DemoDataProvider({ children }) {
     return workOrder;
   };
 
-  const updateWorkOrderStatus = (workOrderId, status, user = 'Demo Operator') => {
+  const updateWorkOrderStatus = (workOrderId, status, user = 'Admin (CMMS)') => {
     const workOrder = workOrders.find((item) => item.id === workOrderId);
     if (!workOrder || workOrder.status === status) return;
     setWorkOrders((current) => current.map((item) => (
@@ -311,21 +314,21 @@ export function DemoDataProvider({ children }) {
     addEvent({ type: 'Work order status updated', workOrderId, status, siteId: workOrder.siteId, actor: user });
   };
 
-  const assignWorkOrder = (workOrderId, assignee, user = 'Demo Operator') => {
+  const assignWorkOrder = (workOrderId, assignee, user = 'Admin (CMMS)') => {
     const workOrder = workOrders.find((item) => item.id === workOrderId);
     if (!workOrder || workOrder.assignee === assignee) return;
     setWorkOrders((current) => current.map((item) => item.id === workOrderId ? { ...item, assignee } : item));
     addEvent({ type: 'Work order assigned', workOrderId, siteId: workOrder.siteId, assignee, actor: user });
   };
 
-  const updateWorkOrderDetails = (workOrderId, changes, user = 'Demo Operator') => {
+  const updateWorkOrderDetails = (workOrderId, changes, user = 'Admin (CMMS)') => {
     const workOrder = workOrders.find((item) => item.id === workOrderId);
     if (!workOrder) return;
     setWorkOrders((current) => current.map((item) => item.id === workOrderId ? { ...item, ...changes } : item));
     addEvent({ type: 'Work order details updated', workOrderId, siteId: workOrder.siteId, fields: Object.keys(changes), actor: user });
   };
 
-  const updateWorkOrderChecklist = (workOrderId, checklistItemId, done, user = 'Demo Operator') => {
+  const updateWorkOrderChecklist = (workOrderId, checklistItemId, done, user = 'Admin (CMMS)') => {
     const workOrder = workOrders.find((item) => item.id === workOrderId);
     if (!workOrder) return;
     setWorkOrders((current) => current.map((item) => item.id === workOrderId
@@ -334,7 +337,7 @@ export function DemoDataProvider({ children }) {
     addEvent({ type: done ? 'Inspection checklist item completed' : 'Inspection checklist item reopened', workOrderId, siteId: workOrder.siteId, checklistItemId, actor: user });
   };
 
-  const reservePartForWorkOrder = (workOrderId, partId, user = 'Demo Operator') => {
+  const reservePartForWorkOrder = (workOrderId, partId, user = 'Admin (CMMS)') => {
     const workOrder = workOrders.find((item) => item.id === workOrderId);
     const part = parts.find((item) => item.id === partId);
     if (!workOrder || !part || (part.siteId && part.siteId !== workOrder.siteId) || part.stock <= part.reserved || (workOrder.reservedParts || []).includes(partId)) return false;
@@ -346,24 +349,24 @@ export function DemoDataProvider({ children }) {
     return true;
   };
 
-  const consumeReservedPartForWorkOrder = (workOrderId, partId, user = 'Demo Operator') => {
+  const consumeReservedPartForWorkOrder = (workOrderId, partId, user = 'Admin (CMMS)') => {
     const workOrder = workOrders.find((item) => item.id === workOrderId);
     const part = parts.find((item) => item.id === partId);
     if (!workOrder || !part || !(workOrder.reservedParts || []).includes(partId) || part.stock < 1 || part.reserved < 1) return false;
     setParts((current) => current.map((item) => item.id === partId ? { ...item, stock: item.stock - 1, reserved: item.reserved - 1 } : item));
     setWorkOrders((current) => current.map((item) => item.id === workOrderId
-      ? { ...item, reservedParts: (item.reservedParts || []).filter((id) => id !== partId), consumedMaterials: [...(item.consumedMaterials || []), { partId, name: part.name, quantity: 1, timestamp: new Date().toISOString() }] }
+      ? { ...item, reservedParts: (item.reservedParts || []).filter((id) => id !== partId), consumedMaterials: [...(item.consumedMaterials || []), { partId, name: part.name, quantity: 1, timestamp: getDemoNow().toISOString() }] }
       : item));
     addEvent({ type: 'Material consumed on work order', workOrderId, siteId: workOrder.siteId, partId, partName: part.name, quantity: 1, actor: user });
     return true;
   };
 
-  const updatePermit = (changes, user = 'Demo Operator') => {
+  const updatePermit = (changes, user = 'Super User') => {
     setPermit((current) => ({ ...current, ...changes }));
     addEvent({ type: 'Permit updated', permitId: permit.id, ...changes, actor: user });
   };
 
-  const reservePart = (partId, user = 'Demo Operator') => {
+  const reservePart = (partId, user = 'Admin (CMMS)') => {
     const part = parts.find((item) => item.id === partId);
     if (!part || part.stock <= part.reserved) return false;
     setParts((current) => current.map((item) => (
@@ -373,7 +376,7 @@ export function DemoDataProvider({ children }) {
     return true;
   };
 
-  const updatePartStock = (partId, delta, transaction = 'Stock adjusted', user = 'Demo Operator') => {
+  const updatePartStock = (partId, delta, transaction = 'Stock adjusted', user = 'Admin (CMMS)') => {
     const part = parts.find((item) => item.id === partId);
     if (!part || part.stock + delta < part.reserved) return false;
     setParts((current) => current.map((item) => item.id === partId ? { ...item, stock: item.stock + delta } : item));
@@ -381,7 +384,7 @@ export function DemoDataProvider({ children }) {
     return true;
   };
 
-  const addInventoryItem = (item, user = 'Demo Operator') => {
+  const addInventoryItem = (item, user = 'Admin (CMMS)') => {
     const part = {
       ...item,
       id: item.id || `INV-${Date.now().toString().slice(-7)}`,

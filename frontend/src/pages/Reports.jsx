@@ -3,6 +3,7 @@ import PageFrame from '../components/ui/PageFrame';
 import { Download, FileBarChart, Mail, Play } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useDemoData } from '../hooks/useDemoData';
+import { getDemoNow } from '../config';
 
 const reports = ['Daily Operations Report', 'Weekly Report', 'Monthly Report', 'Annual Report', 'Equipment Availability Report', 'Battery Performance Report', 'Battery Ageing Report', 'Energy Report', 'Warranty Report', 'Alarm Report', 'Event Report', 'Failure Analysis Report', 'Maintenance Report', 'Asset Health Report', 'Executive Summary'];
 
@@ -144,18 +145,19 @@ export default function Reports() {
   const [period, setPeriod] = useState('Last 30 days');
   const reportSite = reportSiteId ? accessibleSites.find((site) => site.id === reportSiteId) || null : null;
   const activeAlarmCount = accessibleAlarms.filter((alarm) => alarm.state === 'Active' && (!reportSiteId || alarm.siteId === reportSiteId)).length;
-  const reportDate = new Date();
+  const reportDate = getDemoNow();
   const generatedLabel = reportDate.toLocaleDateString([], { month: 'long', year: 'numeric' });
-  const previewMetrics = [
-    ['Site', reportSite?.name || '—'],
-    ['Reporting period', period],
-    ['Availability', reportSite ? `${reportSite.availability}%` : '—'],
-    ['Open alarms', activeAlarmCount],
-    ['Site SoH', reportSite ? `${reportSite.soh}%` : '—'],
-  ];
+  const reportPreview = {
+    'Battery Performance Report': [['Average SoH', reportSite ? `${reportSite.soh}%` : '—'], ['Availability', reportSite ? `${reportSite.availability}%` : '—'], ['Round-trip efficiency', reportSite ? `${reportSite.roundTripEfficiency}%` : '—'], ['Energy capacity', reportSite ? `${reportSite.capacityMWh} MWh` : '—']],
+    'Battery Ageing Report': [['State of health', reportSite ? `${reportSite.soh}%` : '—'], ['Estimated RUL', reportSite ? `${reportSite.rul} years` : '—'], ['Equivalent cycles', reportSite ? reportSite.cycles.toLocaleString() : '—'], ['Risk level', reportSite?.riskLevel || '—']],
+    'Energy Report': [['Energy today', reportSite ? `${reportSite.energyTodayMWh} MWh` : '—'], ['Current power', reportSite ? `${reportSite.powerMW} MW` : '—'], ['State of charge', reportSite ? `${reportSite.soc}%` : '—'], ['Round-trip efficiency', reportSite ? `${reportSite.roundTripEfficiency}%` : '—']],
+    'Alarm Report': [['Open alarms', activeAlarmCount], ['Risk level', reportSite?.riskLevel || '—'], ['Operating state', reportSite?.status || '—'], ['Communications', reportSite?.commsStatus || '—']],
+    'Equipment Availability Report': [['Availability', reportSite ? `${reportSite.availability}%` : '—'], ['Communications', reportSite?.commsStatus || '—'], ['State of health', reportSite ? `${reportSite.soh}%` : '—'], ['Site status', reportSite?.status || '—']],
+  }[selected] || [['Availability', reportSite ? `${reportSite.availability}%` : '—'], ['Open alarms', activeAlarmCount], ['Site SoH', reportSite ? `${reportSite.soh}%` : '—'], ['Operating state', reportSite?.status || '—']];
+  const previewMetrics = [['Site', reportSite?.name || 'Fleet'], ['Reporting period', period], ...reportPreview];
 
   const exportReport = (format) => {
-    const generatedAt = new Date();
+    const generatedAt = getDemoNow();
     const allRows = createReportRows(selected, reportSite, activeAlarmCount, generatedAt);
     const selectedMetrics = templateMetrics[selected];
     const rows = selectedMetrics ? allRows.filter((row, index) => index < 8 || selectedMetrics.includes(row[0])) : allRows;

@@ -15,11 +15,22 @@ export const DEMO_CREDENTIALS = [
   {
     email: 'admin@bessmonitor.demo',
     password: 'Demo@123',
-    name: 'Demo Admin',
-    role: 'Administrator',
-    siteIds: ['BESS-PUNE', 'BESS-JODHUR', 'BESS-CHENNAI', 'BESS-RAIPUR'],
+    name: 'Demo Super User',
+    role: 'Super User',
+    siteIds: ['BESS-PUNE', 'BESS-JODHUR', 'BESS-CHENNAI', 'BESS-RAIPUR', 'BESS-AHMEDABAD', 'BESS-HYDERABAD'],
+  },
+  {
+    email: 'cmms@bessmonitor.demo',
+    password: 'Demo@123',
+    name: 'Demo Admin (CMMS)',
+    role: 'Admin (CMMS)',
+    siteIds: ['BESS-PUNE', 'BESS-JODHUR', 'BESS-CHENNAI', 'BESS-RAIPUR', 'BESS-AHMEDABAD', 'BESS-HYDERABAD'],
   },
 ];
+
+function createSession(user) {
+  return { email: user.email, name: user.name, role: user.role, siteIds: user.siteIds };
+}
 
 export async function login(email, password) {
   const user = DEMO_CREDENTIALS.find(
@@ -28,8 +39,7 @@ export async function login(email, password) {
   if (!user) {
     throw new Error('Invalid email or password. Please try again.');
   }
-  const session = { email: user.email, name: user.name, role: user.role, siteIds: user.siteIds };
-  return session;
+  return createSession(user);
 }
 
 export async function logout() {

@@ -57,7 +57,7 @@ export default function FleetMap() {
     const matchesStatus = statusFilter === 'All' || (statusFilter === 'Offline' ? site.commsStatus === 'Offline' : statusFilter === 'Attention' ? site.riskLevel !== 'Low' || site.activeAlarms > 0 : site.status === statusFilter);
     return matchesQuery && matchesStatus;
   }).map((site) => ({ ...site, weather: weatherBySite[site.id] || '32 °C · Clear' })), [accessibleSites, query, statusFilter]);
-  const healthySites = accessibleSites.filter((site) => site.commsStatus === 'Online' && site.activeAlarms === 0).length;
+  const healthySites = accessibleSites.filter((site) => site.commsStatus === 'Online').length;
   const netPower = useMemo(() => accessibleSites.reduce((sum, site) => sum + site.powerMW, 0), [accessibleSites]);
   const energyToday = useMemo(() => accessibleSites.reduce((sum, site) => sum + site.energyTodayMWh, 0), [accessibleSites]);
 

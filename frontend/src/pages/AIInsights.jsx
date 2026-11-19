@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import PageFrame from '../components/ui/PageFrame';
 import { useDemoData } from '../hooks/useDemoData';
+import { getDemoNow } from '../config';
 import { generatePackData } from '../data/siteDetail';
 
 const priorityStyles = {
@@ -130,7 +131,7 @@ export default function AIInsights() {
   const visible = scoped.filter((finding) => filter === 'All' || finding.category === filter || (filter === 'Degradation' && finding.category === 'Degradation'));
   const activeCount = accessibleAlarms.filter((alarm) => alarm.state === 'Active').length;
   const priorityCount = scoped.filter((finding) => ['Critical', 'Major'].includes(finding.priority)).length;
-  const currentTime = new Date().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+  const currentTime = getDemoNow().toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
     <PageFrame

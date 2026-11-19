@@ -16,7 +16,7 @@ function lerp(a, b, t) {
 
 /**
  * Generate 2 containers × 5 racks × 10 modules × 50 cells for any site.
- * This is 5,000 cells per site and 20,000 cells across the four-site demo fleet.
+ * This is 5,000 cells per site and 30,000 cells across the six-site demo fleet.
  */
 export function generatePackData(siteId = 'BESS-JODHUR') {
   const rng = seededRng(siteId.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0));
@@ -142,7 +142,7 @@ export const bess103PerformanceSeries = [
 ];
 
 // Hour-ending AC power averages. Positive is charging; negative is discharging.
-// Totals match the meter: 94.8 MWh charged, 81.3 MWh discharged.
+// The site dashboard uses the fixed 31.3 MWh daily energy value from sites.js.
 const bess103HourlyPower = [
   7.5, 7.5, -6.7, -6.7, -6.6, 11, 11, -11, -11, 7.7, 7.7, 7.6,
   -10, -10, -9.65, -9.65, 8.1, 8.1, 0, 0, 0, 0, 0, 18.6,
@@ -151,6 +151,7 @@ const bess103HourlyPower = [
   power,
 }));
 
+const bess103PowerScale = 31.3 / 176.1;
 const bess103Rte = 0.932;
 const bess103UsableCapacityMWh = 60 * 0.91;
 const bess103ChargeDischargeEfficiency = Math.sqrt(bess103Rte);
@@ -161,11 +162,12 @@ const netStoredEnergyMWh = chargedMWh * bess103ChargeDischargeEfficiency
 let bess103Soc = 72 - (netStoredEnergyMWh / bess103UsableCapacityMWh) * 100;
 
 export const bess103PowerProfile = bess103HourlyPower.map((point) => {
-  const storedEnergyChangeMWh = point.power >= 0
-    ? point.power * bess103ChargeDischargeEfficiency
-    : point.power / bess103ChargeDischargeEfficiency;
+  const scaledPower = point.power * bess103PowerScale;
+  const storedEnergyChangeMWh = scaledPower >= 0
+    ? scaledPower * bess103ChargeDischargeEfficiency
+    : scaledPower / bess103ChargeDischargeEfficiency;
   bess103Soc += (storedEnergyChangeMWh / bess103UsableCapacityMWh) * 100;
-  return { ...point, soc: +bess103Soc.toFixed(1) };
+  return { ...point, power: +(scaledPower.toFixed(1)), soc: +bess103Soc.toFixed(1) };
 });
 
 export const bess103Equipment = {
@@ -208,8 +210,8 @@ export const bess103Equipment = {
   energyMeter: {
     label: 'Energy Meter',
     status: 'Active',
-    todayChargedMWh: 94.8,
-    todayDischargedMWh: 81.3,
+    todayChargedMWh: 16.8,
+    todayDischargedMWh: 14.5,
   },
   environment: {
     label: 'Environment',

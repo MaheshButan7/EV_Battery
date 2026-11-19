@@ -29,6 +29,9 @@ export default function Header({ onMenuClick, collapsed, onToggleSidebar }) {
     '/executive': 'Executive Reporting',
     '/hazards': 'Safety & Hazards',
     '/admin': 'Administration',
+    '/field-mode': 'Field Mode',
+    '/dashboard-studio': 'Dashboard Studio',
+    '/help-support': 'Help & Support',
   };
   const sitePageLabels = {
     sld: 'Single Line Diagram',
@@ -38,7 +41,6 @@ export default function Header({ onMenuClick, collapsed, onToggleSidebar }) {
   const siteSubpath = isSitePage ? location.pathname.split('/').slice(3)[0] : null;
   const pageLabel = isSitePage ? (siteSubpath ? sitePageLabels[siteSubpath] : 'Site Operations') : pageLabels[location.pathname] || 'Operations';
   const siteContextPaths = [
-    '/alarms',
     '/assets',
     '/asset-health',
     '/maintenance',

@@ -3,6 +3,7 @@ import PageFrame from '../components/ui/PageFrame';
 import Button from '../components/ui/Button';
 import { useAuth } from '../hooks/useAuth';
 import { useDemoData } from '../hooks/useDemoData';
+import { getDemoNow } from '../config';
 import { Activity, ArrowDown, ArrowUp, Battery, Bell, Check, Gauge, LayoutDashboard, Plus, RotateCcw, Save, Zap } from 'lucide-react';
 
 const widgets = [
@@ -26,7 +27,7 @@ function loadConfig(key) {
 export default function DashboardStudio() {
   const { user } = useAuth();
   const { accessibleSites, accessibleAlarms, workOrders } = useDemoData();
-  const role = user?.role || 'Control Room Operator';
+  const role = user?.role || 'Super User';
   const storageKey = `bess-dashboard-config:${role}`;
   const [config, setConfig] = useState(() => loadConfig(storageKey));
   const [saved, setSaved] = useState(false);
@@ -40,7 +41,7 @@ export default function DashboardStudio() {
     efficiency: accessibleSites.length ? accessibleSites.reduce((sum, site) => sum + site.roundTripEfficiency, 0) / accessibleSites.length : 0,
     throughput: accessibleSites.reduce((sum, site) => sum + site.energyTodayMWh, 0),
     openWorkOrders: workOrders.filter((item) => item.status !== 'Done').length,
-    overdueWorkOrders: workOrders.filter((item) => item.status !== 'Done' && item.dueDate && new Date(`${item.dueDate}T00:00:00`) < new Date(new Date().setHours(0, 0, 0, 0))).length,
+    overdueWorkOrders: workOrders.filter((item) => item.status !== 'Done' && item.dueDate && new Date(`${item.dueDate}T00:00:00`) < new Date(getDemoNow().setHours(0, 0, 0, 0))).length,
   }), [accessibleSites, accessibleAlarms, workOrders]);
 
   useEffect(() => { setConfig(loadConfig(storageKey)); setSaved(false); }, [storageKey]);

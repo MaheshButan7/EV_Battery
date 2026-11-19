@@ -115,10 +115,10 @@ export default function Overview() {
   const rankedSites = [...accessibleSites].sort((a, b) => b[rankingMetric] - a[rankingMetric]);
 
   return (
-    <PageFrame title="Fleet Overview" description="Fleet status, energy performance, site health, and priority alerts.">
+    <PageFrame title="Fleet Overview" description="Six-site synthetic sample fleet: 375 MW / 750 MWh, aligned to the client rollout clarification.">
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Fleet performance indicators">
-        <MetricCard icon={Building2} iconClass="bg-emerald-500/10 text-emerald-600" label="Sites in fleet" value={`${onlineSites.length} / ${accessibleSites.length}`} detail="All registered demo sites" />
-        <MetricCard icon={Zap} iconClass="bg-cyan-500/10 text-cyan-600" label="Installed capacity" value={`${capacityMW} MW`} detail="Across all four sites" />
+        <MetricCard icon={Building2} iconClass="bg-emerald-500/10 text-emerald-600" label="Sites reporting" value={`${onlineSites.length} / ${accessibleSites.length}`} detail="All registered demo sites" />
+        <MetricCard icon={Zap} iconClass="bg-cyan-500/10 text-cyan-600" label="Installed capacity" value={`${capacityMW} MW`} detail="Across six synthetic sites · 750 MWh" />
         <MetricCard icon={Zap} iconClass="bg-cyan-500/10 text-cyan-600" label="Fleet active power" value={`${fleetPower.toFixed(1)} MW`} detail="Net instantaneous output" />
         <MetricCard icon={Battery} iconClass="bg-blue-500/10 text-blue-600" label="Stored energy" value={`${accessibleSites.reduce((sum, site) => sum + (site.soc / 100) * site.capacityMWh, 0).toFixed(1)} MWh`} detail="Estimated from SOC and capacity" />
         <MetricCard icon={Battery} iconClass="bg-emerald-500/10 text-emerald-600" label="Fleet state of charge" value={`${average(accessibleSites.map((site) => site.soc)).toFixed(1)}%`} detail="Mean across all sites" />

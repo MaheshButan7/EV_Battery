@@ -8,9 +8,9 @@ import { AlertTriangle, Check, Flame, Radio, ShieldAlert, Thermometer, Zap } fro
 function buildHazards(sites, alarms) {
   const base = sites.flatMap((site) => {
     let item;
-    if (site.id === 'BESS-JODHUR') item = { category: 'Thermal', severity: 'Critical', asset: 'C1-R2-M4-C07', detail: 'Cell temperature reached 51 °C; investigate thermal propagation controls.', owner: 'Control Room Operator', action: 'Inspect affected rack and verify cooling and fire readiness.' };
-    else if (site.id === 'BESS-RAIPUR') item = { category: 'Environmental', severity: 'Major', asset: 'HVAC-01', detail: 'Cooling unit unavailable while battery temperature is elevated.', owner: 'Site / Field Engineer', action: 'Restore HVAC and confirm rack temperature is stable.' };
-    else if (site.commsStatus === 'Offline') item = { category: 'Communications', severity: 'Major', asset: 'GW-01', detail: 'Gateway offline; data is shown as last known state while local buffering is simulated.', owner: 'Control Room Operator', action: 'Restore gateway communications and verify buffered data sync.' };
+    if (site.id === 'BESS-JODHUR') item = { category: 'Thermal', severity: 'Critical', asset: 'C1-R2-M4-C07', detail: 'Cell temperature reached 51 °C; investigate thermal propagation controls.', owner: 'Super User', action: 'Inspect affected rack and verify cooling and fire readiness.' };
+    else if (site.id === 'BESS-RAIPUR') item = { category: 'Environmental', severity: 'Major', asset: 'HVAC-01', detail: 'Cooling unit unavailable while battery temperature is elevated.', owner: 'Admin (CMMS)', action: 'Restore HVAC and confirm rack temperature is stable.' };
+    else if (site.commsStatus === 'Offline') item = { category: 'Communications', severity: 'Major', asset: 'GW-01', detail: 'Gateway offline; data is shown as last known state while local buffering is simulated.', owner: 'Super User', action: 'Restore gateway communications and verify buffered data sync.' };
     else return [];
     const alarm = alarms.find((entry) => entry.siteId === site.id && entry.state === 'Active');
     return [{ ...item, site, alarm }];
@@ -25,7 +25,7 @@ function buildHazards(sites, alarms) {
             : null;
     const site = siteById.get(alarm.siteId);
     if (!category || !site || base.some((item) => item.site.id === site.id && item.category === category)) return [];
-    return [{ site, alarm, asset: alarm.equipment || 'Site safety system', category, severity: alarm.priority === 'Critical' ? 'Critical' : 'Major', detail: alarm.description, owner: 'Control Room Operator', action: 'Review the source alarm, verify the safety system and follow site procedure.' }];
+    return [{ site, alarm, asset: alarm.equipment || 'Site safety system', category, severity: alarm.priority === 'Critical' ? 'Critical' : 'Major', detail: alarm.description, owner: 'Super User', action: 'Review the source alarm, verify the safety system and follow site procedure.' }];
   });
   return [...base, ...supplemental];
 }
@@ -42,7 +42,7 @@ export default function Hazards() {
   const categories = ['All', ...new Set(hazards.map((item) => item.category))];
   const startPermit = (item) => {
     selectSite(item.site.id);
-    updatePermit({ state: 'Requested', siteId: item.site.id, assetId: item.asset, hazard: item.detail, requester: 'Demo Operator', authorizationLevel: 'Site Supervisor' });
+    updatePermit({ state: 'Requested', siteId: item.site.id, assetId: item.asset, hazard: item.detail, requester: 'Super User', authorizationLevel: 'Super User' });
     navigate('/maintenance/permits');
   };
 

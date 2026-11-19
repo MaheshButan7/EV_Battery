@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Bot, MessageCircle, RotateCcw, Send, X } from 'lucide-react';
+import { useDemoData } from '../hooks/useDemoData';
 
 const welcome = {
   role: 'assistant',
@@ -12,21 +13,25 @@ const suggestions = [
   'How is Jodhpur performing?',
 ];
 
-function getDemoReply(question) {
+function getDemoReply(question, sites, alarms) {
   const q = question.toLowerCase();
+  const offlineSites = sites.filter((site) => site.commsStatus !== 'Online').map((site) => site.name);
+  const jodhpurAlarms = alarms.filter((alarm) => alarm.siteId === 'BESS-JODHUR' && alarm.state === 'Active').length;
+  const activeAlarmCount = alarms.filter((alarm) => alarm.state === 'Active').length;
   if (q.includes('jodhpur') || q.includes('site')) {
-    return 'Jodhpur Desert BESS is reporting a fault, with 92% battery health, 97.8% availability, and 32 active alarms. Open the site dashboard to review the alarm list and asset details.';
+    return `Jodhpur Desert BESS is reporting a fault, with 92% battery health, 97.8% availability, and ${jodhpurAlarms} active alarms. Open the site dashboard to review the alarm list and asset details.`;
   }
   if (q.includes('attention') || q.includes('alarm') || q.includes('fault')) {
-    return 'The fleet has 32 active alarms at Jodhpur Desert BESS, currently marked Fault. I recommend reviewing the highest-severity active alarms first and checking site communications and battery health.';
+    return `The fleet has ${activeAlarmCount} active alarms. Jodhpur Desert BESS is marked Fault with ${jodhpurAlarms} active alarms. I recommend reviewing the highest-severity active alarms first and checking site communications and battery health.`;
   }
   if (q.includes('health') || q.includes('fleet') || q.includes('summary')) {
-    return 'Fleet health snapshot: sites are online and monitored, with battery health, availability, alarms, and communications available on the dashboard. Jodhpur Desert BESS is the current priority because it has an active fault and 32 alarms.';
+    return `Fleet health snapshot: ${sites.length - offlineSites.length} of ${sites.length} sites have online communications. ${offlineSites.join(', ')} is offline. Jodhpur Desert BESS is the current priority because it has an active fault and ${jodhpurAlarms} alarms.`;
   }
   return 'I can help summarize fleet health, highlight alarms, or review Jodhpur site performance. Try one of the suggested questions for this demo.';
 }
 
 export default function ChatAssistant() {
+  const { accessibleSites, accessibleAlarms } = useDemoData();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([welcome]);
   const [draft, setDraft] = useState('');
@@ -39,7 +44,7 @@ export default function ChatAssistant() {
   const sendMessage = (value = draft) => {
     const text = value.trim();
     if (!text) return;
-    setMessages((current) => [...current, { role: 'user', text }, { role: 'assistant', text: getDemoReply(text) }].slice(-41));
+    setMessages((current) => [...current, { role: 'user', text }, { role: 'assistant', text: getDemoReply(text, accessibleSites, accessibleAlarms) }].slice(-41));
     setDraft('');
   };
 
