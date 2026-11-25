@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { DEMO_CREDENTIALS } from '../services/auth';
 import { PRODUCT_NAME } from '../config';
 import ThemeToggle from '../components/ThemeToggle';
 import companyLogo from '../assets/company_logo.webp';
@@ -108,7 +107,7 @@ export default function Login() {
                 Sign in to your account
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Use the demo credentials below to explore the platform.
+                Sign in with the dashboard credentials provided by your team.
               </p>
             </div>
 
@@ -174,34 +173,6 @@ export default function Login() {
               </button>
             </form>
 
-            {/* Demo credentials hint */}
-            <div className="mt-6 p-4 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-              <p className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
-                Demo Credentials
-              </p>
-              <p className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">Click a credential set to fill the sign-in form.</p>
-              {DEMO_CREDENTIALS.map((c) => (
-                <button
-                  key={c.email}
-                  type="button"
-                  aria-label={`Fill sign-in fields with the ${c.role} demo credentials`}
-                  onClick={() => {
-                    setEmail(c.email);
-                    setPassword(c.password);
-                    setEmailError('');
-                    setPasswordError('');
-                    setError('');
-                  }}
-                  className="w-full cursor-pointer rounded-lg text-left font-mono text-xs text-slate-700 transition-colors hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 dark:text-slate-300 dark:hover:bg-slate-700/60"
-                >
-                  <span className="block space-y-1 p-2">
-                    <span className="block"><span className="text-slate-400">Email:</span> {c.email}</span>
-                    <span className="block"><span className="text-slate-400">Pass:</span> {c.password}</span>
-                    <span className="block"><span className="text-slate-400">Role:</span> {c.role}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       </div>

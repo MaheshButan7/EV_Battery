@@ -4,6 +4,17 @@ A fleet-level digital twin and predictive battery analytics dashboard developed 
 
 ## 🚀 Quick Start
 
+## Demo Dashboard Access
+
+The frontend demo currently uses client-side mock authentication. Use these credentials for the demo:
+
+| Email | Password |
+| --- | --- |
+| `admin@bessmonitor.demo` | `Bess!Fleet-2026#Q7mR` |
+| `cmms@bessmonitor.demo` | `Bess!Fleet-2026#Q7mR` |
+
+Changing these values in source only affects a deployed dashboard after a new build is deployed. This mock login is not a security boundary: credentials are included in the browser JavaScript. Use Vercel access controls or a server-side authentication service to restrict access to the live deployment.
+
 1. **Install Dependencies**
    ```bash
    npm install

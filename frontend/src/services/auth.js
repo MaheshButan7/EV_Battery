@@ -14,14 +14,14 @@ const SESSION_KEY = 'bess_session';
 export const DEMO_CREDENTIALS = [
   {
     email: 'admin@bessmonitor.demo',
-    password: 'Demo@123',
+    password: 'Bess!Fleet-2026#Q7mR',
     name: 'Demo Super User',
     role: 'Super User',
     siteIds: ['BESS-PUNE', 'BESS-JODHUR', 'BESS-CHENNAI', 'BESS-RAIPUR', 'BESS-AHMEDABAD', 'BESS-HYDERABAD'],
   },
   {
     email: 'cmms@bessmonitor.demo',
-    password: 'Demo@123',
+    password: 'Bess!Fleet-2026#Q7mR',
     name: 'Demo Admin (CMMS)',
     role: 'Admin (CMMS)',
     siteIds: ['BESS-PUNE', 'BESS-JODHUR', 'BESS-CHENNAI', 'BESS-RAIPUR', 'BESS-AHMEDABAD', 'BESS-HYDERABAD'],
